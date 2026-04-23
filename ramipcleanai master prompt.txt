@@ -1,0 +1,346 @@
+You are a senior full-stack engineer. Build a production-ready MVP SaaS web app called RapidCleanAI.
+
+GOAL
+Build a simple, fast-launch SaaS that can start collecting subscription revenue immediately. Prioritize working features, Stripe integration, and a clean UI over advanced logic.
+
+IMPORTANT
+This is PHASE 1 MVP. Do NOT overengineer.
+
+Focus on:
+- working authentication
+- working Stripe checkout
+- protected dashboard
+- strong conversion landing page
+
+Skip complex AI logic for now. Stub it cleanly.
+
+--------------------------------------------------
+
+TECH STACK
+- Next.js latest with App Router
+- TypeScript
+- Tailwind CSS
+- shadcn/ui
+- Supabase (auth + basic database)
+- Stripe (hosted checkout only)
+- Vercel-ready deployment
+
+--------------------------------------------------
+
+BRAND + VISUAL STYLE
+
+Dark modern SaaS with neon accents.
+
+COLORS
+- background: #0B0F14
+- surface: #111827
+- elevated: #1F2937
+- neon green: #22FF88
+- cyan: #22D3EE
+- text primary: #E5E7EB
+- text secondary: #9CA3AF
+
+STYLE RULES
+- No pure black
+- Use subtle gradients
+- Rounded cards
+- Soft glow on primary buttons
+- Clean spacing
+- Premium, modern, trustworthy feel
+
+--------------------------------------------------
+
+STRIPE SETUP (IMPORTANT)
+
+We are launching with ONLY ONE PLAN.
+
+Plan:
+Pro Plan — $49/month
+
+Stripe payment link:
+https://buy.stripe.com/cNi6oA3nH60t7vdc9K00000
+
+Create:
+
+/lib/stripe.ts
+
+export const STRIPE_LINK = "https://buy.stripe.com/cNi6oA3nH60t7vdc9K00000"
+
+RULES:
+- ALL CTA buttons must use STRIPE_LINK
+- Do NOT create multiple plans yet
+- Do NOT build Stripe backend yet
+- Keep it simple and working
+
+--------------------------------------------------
+
+AUTH (SUPABASE)
+
+- Email/password login
+- Signup page
+- Store user basic profile
+- Protect dashboard route
+
+If user not logged in → redirect to /login
+
+--------------------------------------------------
+
+PAGES
+
+PUBLIC:
+- /
+- /pricing
+- /features
+- /faq
+- /contact
+- /login
+- /signup
+
+PROTECTED:
+- /dashboard
+
+LEGAL:
+- /privacy
+- /terms
+
+--------------------------------------------------
+
+HOME PAGE
+
+Hero:
+Headline:
+Quote Cleaning Jobs Faster. Price Them More Profitably.
+
+Subheadline:
+RapidCleanAI helps cleaning business owners respond faster, price smarter, and protect their margins.
+
+Primary CTA:
+Start Now → STRIPE_LINK
+
+Secondary CTA:
+View Pricing → /pricing
+
+Trust bullets:
+- Built for cleaning businesses
+- Fast quote guidance in seconds
+- Designed to protect your margins
+
+Sections:
+- Problem
+- Solution
+- How it works (3 steps)
+- Benefits
+- Testimonials
+- Pricing preview (single plan)
+- Final CTA
+
+--------------------------------------------------
+
+PRICING PAGE (SIMPLIFIED)
+
+Headline:
+Simple pricing. Powerful results.
+
+ONLY ONE PLAN:
+
+Pro Plan — $49/month
+
+Features:
+- Unlimited quote sessions
+- Smart pricing guidance
+- Customer-ready messages
+- AI-powered quote assistant
+- Dashboard access
+- Priority support
+
+CTA:
+Start Now → STRIPE_LINK
+
+Below pricing include:
+- Cancel anytime
+- No contracts
+- Secure checkout powered by Stripe
+- “More plans coming soon”
+
+Add FAQ:
+- Can I cancel anytime?
+- Does it work on mobile?
+- Will more plans be added?
+
+--------------------------------------------------
+
+FEATURES PAGE
+
+Sections:
+- Smart pricing guidance
+- Customer-ready messages
+- Faster response times
+- Margin protection
+- Mobile-friendly dashboard
+
+--------------------------------------------------
+
+FAQ PAGE
+
+Include:
+- Who is this for?
+- Does it work on mobile?
+- Can I cancel anytime?
+- Do I need technical skills?
+- Will it save my quotes?
+- Is this for teams?
+
+--------------------------------------------------
+
+CONTACT PAGE
+
+Simple form:
+- name
+- email
+- message
+
+Show:
+support@rapidcleanai.com
+Raleigh, NC
+
+--------------------------------------------------
+
+LOGIN PAGE
+
+- email
+- password
+- login button
+- link to signup
+
+--------------------------------------------------
+
+SIGNUP PAGE
+
+- name
+- email
+- password
+
+After signup:
+→ redirect to dashboard
+
+--------------------------------------------------
+
+DASHBOARD (MVP VERSION)
+
+DO NOT build full AI yet.
+
+Layout:
+
+Desktop:
+- left: chat panel
+- right: results panel
+
+Mobile:
+- stacked layout
+
+Chat panel:
+- input
+- send button
+- sample prompts
+
+Results panel:
+Show placeholder:
+"Your AI-generated quote will appear here."
+
+Buttons:
+- New Quote
+- Copy
+- Clear
+
+--------------------------------------------------
+
+AI (STUB ONLY)
+
+Create:
+/api/chat
+
+Return mock structured JSON.
+
+Do NOT integrate OpenAI yet.
+
+--------------------------------------------------
+
+NAVIGATION
+
+Public navbar:
+- Logo
+- Features
+- Pricing
+- FAQ
+- Contact
+- Login
+- Start Now (highlighted → STRIPE_LINK)
+
+Dashboard navbar:
+- Dashboard
+- Billing (placeholder)
+- Account
+- Logout
+
+--------------------------------------------------
+
+FOOTER
+
+Include:
+- support@rapidcleanai.com
+- Raleigh, NC
+- Terms
+- Privacy
+
+--------------------------------------------------
+
+SEO
+
+Add metadata:
+- title
+- description
+- keywords:
+  cleaning estimate software, AI cleaning quotes, cleaning business tools
+
+--------------------------------------------------
+
+PROJECT STRUCTURE
+
+/app
+/components
+/lib
+/api
+/styles
+
+Components:
+- Navbar
+- Footer
+- PricingCard
+- FeatureCard
+- GlowButton
+- ChatPanel
+- ResultsPanel
+
+--------------------------------------------------
+
+OUTPUT REQUIREMENTS
+
+1. Generate full project
+2. Show file structure
+3. Show key files
+4. Show how to run locally
+5. Show how to deploy to Vercel
+6. Show where Stripe link is used
+
+--------------------------------------------------
+
+FINAL GOAL
+
+The app must:
+- Look professional
+- Be mobile responsive
+- Accept payments via Stripe link
+- Allow login
+- Show dashboard
+
+This must be ready to launch and collect revenue immediately.

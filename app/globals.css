@@ -1,0 +1,48 @@
+@import "../styles/theme.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    @apply border-brand-border;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-brand-bg font-sans text-brand-text antialiased;
+  }
+
+  ::selection {
+    background: rgba(34, 255, 136, 0.24);
+    color: #f8fafc;
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .section-shell {
+    @apply rounded-3xl border border-white/10 bg-white/5 backdrop-blur-sm;
+  }
+
+  .card-sheen {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .card-sheen::before {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    background: linear-gradient(135deg, rgba(34, 255, 136, 0.18), transparent 35%, rgba(34, 211, 238, 0.14));
+    opacity: 0.8;
+    pointer-events: none;
+  }
+}

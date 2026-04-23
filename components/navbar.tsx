@@ -1,0 +1,159 @@
+"use client";
+
+import { useState } from "react";
+import Link from "next/link";
+import { Menu, X } from "lucide-react";
+import { GlowButton } from "@/components/glow-button";
+import { Logo } from "@/components/logo";
+import { Button } from "@/components/ui/button";
+import { publicNavItems } from "@/lib/site";
+import { STRIPE_LINK } from "@/lib/stripe";
+import { cn } from "@/lib/utils";
+
+type LogoutAction = (formData: FormData) => void | Promise<void>;
+
+type NavbarProps =
+  | {
+      variant?: "public";
+      className?: string;
+    }
+  | {
+      variant: "dashboard";
+      className?: string;
+      userName?: string | null;
+      userEmail?: string | null;
+      logoutAction: LogoutAction;
+    };
+
+export function Navbar(props: NavbarProps) {
+  const [open, setOpen] = useState(false);
+  const variant = props.variant ?? "public";
+  const dashboardUserLabel =
+    props.variant === "dashboard"
+      ? props.userName ?? props.userEmail ?? "Account"
+      : "Account";
+  const logoutAction = props.variant === "dashboard" ? props.logoutAction : undefined;
+
+  return (
+    <header className={cn("sticky top-0 z-50 px-3 pt-3 sm:px-6", props.className)}>
+      <div className="container">
+        <div className="rounded-3xl border border-white/10 bg-[rgba(11,15,20,0.78)] px-4 py-3 backdrop-blur-xl shadow-[0_16px_48px_rgba(11,15,20,0.35)] sm:px-6">
+          <div className="flex items-center justify-between gap-4">
+            <Logo href={variant === "dashboard" ? "/dashboard" : "/"} />
+
+            <nav className="hidden items-center gap-7 text-sm text-brand-muted lg:flex">
+              {variant === "public" ? (
+                <>
+                  {publicNavItems.map((item) => (
+                    <Link key={item.href} href={item.href} className="transition hover:text-white">
+                      {item.label}
+                    </Link>
+                  ))}
+                  <Link href="/login" className="transition hover:text-white">
+                    Login
+                  </Link>
+                  <GlowButton href={STRIPE_LINK} className="px-4 py-2.5">
+                    Start Now
+                  </GlowButton>
+                </>
+              ) : (
+                <>
+                  <Link href="/dashboard" className="transition hover:text-white">
+                    Dashboard
+                  </Link>
+                  <a href={STRIPE_LINK} className="transition hover:text-white" rel="noreferrer">
+                    Billing
+                  </a>
+                  <a href="#account" className="transition hover:text-white">
+                    Account
+                  </a>
+                  <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs uppercase tracking-[0.18em] text-brand-muted">
+                    {dashboardUserLabel}
+                  </span>
+                  <form action={logoutAction}>
+                    <Button type="submit" variant="secondary" size="sm">
+                      Logout
+                    </Button>
+                  </form>
+                </>
+              )}
+            </nav>
+
+            <button
+              type="button"
+              className="inline-flex size-11 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-brand-text transition hover:border-brand-neon/40 hover:text-white lg:hidden"
+              onClick={() => setOpen((value) => !value)}
+              aria-label={open ? "Close menu" : "Open menu"}
+            >
+              {open ? <X className="size-5" /> : <Menu className="size-5" />}
+            </button>
+          </div>
+
+          {open ? (
+            <div className="mt-5 rounded-3xl border border-white/10 bg-white/5 p-4 lg:hidden">
+              <div className="flex flex-col gap-3 text-sm text-brand-muted">
+                {variant === "public" ? (
+                  <>
+                    {publicNavItems.map((item) => (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        className="rounded-2xl px-3 py-2 transition hover:bg-white/5 hover:text-white"
+                        onClick={() => setOpen(false)}
+                      >
+                        {item.label}
+                      </Link>
+                    ))}
+                    <Link
+                      href="/login"
+                      className="rounded-2xl px-3 py-2 transition hover:bg-white/5 hover:text-white"
+                      onClick={() => setOpen(false)}
+                    >
+                      Login
+                    </Link>
+                    <GlowButton href={STRIPE_LINK} className="w-full justify-center" onClick={() => setOpen(false)}>
+                      Start Now
+                    </GlowButton>
+                  </>
+                ) : (
+                  <>
+                    <Link
+                      href="/dashboard"
+                      className="rounded-2xl px-3 py-2 transition hover:bg-white/5 hover:text-white"
+                      onClick={() => setOpen(false)}
+                    >
+                      Dashboard
+                    </Link>
+                    <a
+                      href={STRIPE_LINK}
+                      className="rounded-2xl px-3 py-2 transition hover:bg-white/5 hover:text-white"
+                      onClick={() => setOpen(false)}
+                      rel="noreferrer"
+                    >
+                      Billing
+                    </a>
+                    <a
+                      href="#account"
+                      className="rounded-2xl px-3 py-2 transition hover:bg-white/5 hover:text-white"
+                      onClick={() => setOpen(false)}
+                    >
+                      Account
+                    </a>
+                    <div className="rounded-2xl border border-white/10 bg-white/5 px-3 py-2 text-xs uppercase tracking-[0.18em]">
+                      {dashboardUserLabel}
+                    </div>
+                    <form action={logoutAction}>
+                      <Button type="submit" variant="secondary" className="w-full">
+                        Logout
+                      </Button>
+                    </form>
+                  </>
+                )}
+              </div>
+            </div>
+          ) : null}
+        </div>
+      </div>
+    </header>
+  );
+}

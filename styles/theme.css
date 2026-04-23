@@ -1,0 +1,56 @@
+:root {
+  --background: 11 15 20;
+  --surface: 17 24 39;
+  --elevated: 31 41 55;
+  --neon: 34 255 136;
+  --cyan: 34 211 238;
+  --text-primary: 229 231 235;
+  --text-secondary: 156 163 175;
+}
+
+body {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at 12% 18%, rgba(34, 255, 136, 0.12), transparent 24%),
+    radial-gradient(circle at 88% 2%, rgba(34, 211, 238, 0.12), transparent 25%),
+    linear-gradient(180deg, #0b0f14 0%, #0f1724 38%, #0b0f14 100%);
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.018) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.018) 1px, transparent 1px);
+  background-size: 72px 72px;
+  mask-image: radial-gradient(circle at center, black 48%, transparent 92%);
+  opacity: 0.42;
+  pointer-events: none;
+  z-index: -1;
+}
+
+.surface-gradient {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.06), rgba(255, 255, 255, 0.02)),
+    linear-gradient(135deg, rgba(34, 255, 136, 0.08), transparent 35%, rgba(34, 211, 238, 0.08));
+}
+
+.premium-border {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 20px 60px rgba(11, 15, 20, 0.35);
+}
+
+.glow-ring {
+  box-shadow:
+    0 0 0 1px rgba(34, 255, 136, 0.16),
+    0 18px 48px rgba(34, 255, 136, 0.14);
+}
+
+.cyan-glow {
+  box-shadow:
+    0 0 0 1px rgba(34, 211, 238, 0.14),
+    0 18px 48px rgba(34, 211, 238, 0.12);
+}
