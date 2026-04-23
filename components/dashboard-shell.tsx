@@ -34,6 +34,19 @@ function buildCopyPayload(result: MockQuoteResponse) {
   ].join("\n");
 }
 
+function getApiErrorMessage(payload: unknown) {
+  if (
+    payload &&
+    typeof payload === "object" &&
+    "error" in payload &&
+    typeof payload.error === "string"
+  ) {
+    return payload.error;
+  }
+
+  return "Unable to generate a quote right now.";
+}
+
 export function DashboardShell() {
   const [prompt, setPrompt] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([initialMessage]);
@@ -81,11 +94,7 @@ export function DashboardShell() {
         | null;
 
       if (!response.ok) {
-        const message =
-          payload && typeof payload === "object" && typeof payload.error === "string"
-            ? payload.error
-            : "Unable to generate a quote right now.";
-        throw new Error(message);
+        throw new Error(getApiErrorMessage(payload));
       }
 
       if (!isMockQuoteResponse(payload)) {

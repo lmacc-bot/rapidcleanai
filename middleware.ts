@@ -1,9 +1,10 @@
-import { createServerClient } from "@supabase/ssr";
+import { createServerClient, type SetAllCookies } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { updateSession } from "@/lib/supabase/middleware";
 
 const DASHBOARD_PREFIX = "/dashboard";
 const AUTH_ROUTES = new Set(["/login", "/signup"]);
+type CookieToSet = Parameters<NonNullable<SetAllCookies>>[0][number];
 
 function isDashboardRoute(pathname: string) {
   return pathname.startsWith(DASHBOARD_PREFIX);
@@ -31,15 +32,13 @@ async function hasAuthenticatedUser(request: NextRequest, response: NextResponse
       getAll() {
         return request.cookies.getAll();
       },
-      setAll(cookiesToSet, headers) {
-        cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
-
-        cookiesToSet.forEach(({ name, value, options }) => {
-          response.cookies.set(name, value, options);
+      setAll(cookiesToSet) {
+        cookiesToSet.forEach(({ name, value }: CookieToSet) => {
+          request.cookies.set(name, value);
         });
 
-        Object.entries(headers ?? {}).forEach(([key, value]) => {
-          response.headers.set(key, value);
+        cookiesToSet.forEach(({ name, value, options }: CookieToSet) => {
+          response.cookies.set(name, value, options);
         });
       },
     },

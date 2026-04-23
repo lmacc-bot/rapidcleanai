@@ -30,6 +30,10 @@ const variants = {
     "border border-white/12 bg-white/6 text-brand-text hover:border-brand-cyan/40 hover:bg-white/10",
 };
 
+function isLinkProps(props: LinkProps | ActionProps): props is LinkProps {
+  return typeof props.href === "string";
+}
+
 export function GlowButton(props: LinkProps | ActionProps) {
   const content = (
     <>
@@ -38,7 +42,7 @@ export function GlowButton(props: LinkProps | ActionProps) {
     </>
   );
 
-  if ("href" in props && props.href) {
+  if (isLinkProps(props)) {
     const { href, className, variant = "primary", trailingIcon, ...rest } = props;
     const isExternal = href.startsWith("http");
 
@@ -62,10 +66,12 @@ export function GlowButton(props: LinkProps | ActionProps) {
     );
   }
 
-  const { className, variant = "primary", trailingIcon, type = "button", ...rest } = props;
+  const { className, variant = "primary", trailingIcon, type, ...rest } = props;
+  const buttonType: ButtonHTMLAttributes<HTMLButtonElement>["type"] =
+    type === "submit" || type === "reset" ? type : "button";
 
   return (
-    <button type={type} className={cn(baseStyles, variants[variant], className)} {...rest}>
+    <button type={buttonType} className={cn(baseStyles, variants[variant], className)} {...rest}>
       {content}
     </button>
   );
