@@ -113,7 +113,7 @@ export default async function DashboardPage() {
             <div>
               <p className="text-sm text-brand-muted">Billing</p>
               <p className="mt-1 text-white">
-                Manual access gating is active for this MVP. Stripe webhooks can promote pending accounts automatically in a future billing pass.
+                Your Pro access is active. Stripe confirms successful checkout and RapidCleanAI unlocks your dashboard automatically after payment.
               </p>
             </div>
           </CardContent>

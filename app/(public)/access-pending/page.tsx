@@ -50,7 +50,7 @@ export default async function AccessPendingPage({ searchParams }: AccessPendingP
                 Your access is being prepared
               </h1>
               <p className="max-w-2xl text-base leading-8 text-brand-muted">
-                Your account was created successfully, but dashboard access is not active yet.
+                Your account was created successfully. Complete checkout to activate dashboard access.
               </p>
               <p className="max-w-2xl text-base leading-8 text-brand-muted">
                 If you already completed payment, your access may still be processing.
