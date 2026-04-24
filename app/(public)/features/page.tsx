@@ -7,7 +7,7 @@ import { SectionHeading } from "@/components/section-heading";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { featureHighlights } from "@/lib/site";
-import { STRIPE_LINK } from "@/lib/stripe";
+import { BILLING_ENTRY_HREF } from "@/lib/stripe";
 import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
@@ -35,12 +35,12 @@ export default function FeaturesPage() {
         <Card className="surface-gradient premium-border">
           <CardContent className="space-y-4 p-6">
             <p className="text-xs uppercase tracking-[0.18em] text-brand-cyan">Launch-ready MVP</p>
-            <p className="font-display text-3xl text-white">Clean UI, protected dashboard, hosted checkout.</p>
+            <p className="font-display text-3xl text-white">Clean UI, protected dashboard, trial-first subscriptions.</p>
             <p className="text-sm leading-7 text-brand-muted">
               Start with the simplest stack that gets customers into the product and into Stripe right away.
             </p>
             <div className="flex flex-col gap-3 sm:flex-row">
-              <GlowButton href={STRIPE_LINK}>Start Now</GlowButton>
+              <GlowButton href={BILLING_ENTRY_HREF}>Start Now</GlowButton>
               <Link href="/pricing" className={cn(buttonVariants({ variant: "secondary", size: "lg" }), "rounded-2xl")}>
                 View Pricing
               </Link>

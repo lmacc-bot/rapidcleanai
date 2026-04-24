@@ -180,16 +180,17 @@ export const faqItems = [
 
 export const pricingFaqItems = [
   {
-    question: "Can I cancel anytime?",
-    answer: "Yes. There are no contracts, and you can cancel your subscription at any time.",
+    question: "Can I downgrade later?",
+    answer:
+      "Yes. Stripe Billing Portal lets you downgrade, upgrade, or cancel without having to contact support.",
+  },
+  {
+    question: "What happens during the trial?",
+    answer:
+      "Every new checkout starts with a 14-day full-access trial. After that, your selected plan becomes the billed subscription unless you change it.",
   },
   {
     question: "Does it work on mobile?",
     answer: "Yes. The dashboard is built to work cleanly on phones, tablets, and desktop browsers.",
-  },
-  {
-    question: "Will more plans be added?",
-    answer:
-      "Yes. More plans and expanded team options are planned after the Phase 1 MVP launch.",
   },
 ];

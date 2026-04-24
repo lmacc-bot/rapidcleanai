@@ -1,19 +1,27 @@
 "use client";
 
 import type { MockQuoteResponse } from "@/lib/mock-quote";
-import { Copy, FilePlus2, RotateCcw, ShieldCheck, Sparkles } from "lucide-react";
+import type { QuoteApiErrorPayload, QuoteUsageSummary, SavedQuoteSummary } from "@/lib/quote-limits";
+import { Copy, Download, FilePlus2, RotateCcw, ShieldCheck, Sparkles } from "lucide-react";
+import { GlowButton } from "@/components/glow-button";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { getBillingPlanLabel, MANAGE_BILLING_HREF } from "@/lib/stripe";
 
 type ResultsPanelProps = {
   result: MockQuoteResponse | null;
   loading: boolean;
   copied: boolean;
   errorMessage: string | null;
+  usage: QuoteUsageSummary;
+  recentQuotes: SavedQuoteSummary[];
+  apiLimitError: QuoteApiErrorPayload | null;
+  exporting: boolean;
   onNewQuote: () => void;
   onCopy: () => void;
   onClear: () => void;
+  onExport: () => Promise<void> | void;
 };
 
 const money = new Intl.NumberFormat("en-US", {
@@ -22,15 +30,86 @@ const money = new Intl.NumberFormat("en-US", {
   maximumFractionDigits: 0,
 });
 
+function formatHistoryWindow(historyDays: number | null) {
+  return historyDays === null ? "Unlimited history" : `${historyDays}-day history`;
+}
+
+function formatSavedQuotesLimit(usage: QuoteUsageSummary) {
+  return usage.savedQuotesLimit === null
+    ? `${usage.savedQuotesVisible} saved quotes`
+    : `${usage.savedQuotesVisible} of ${usage.savedQuotesLimit} visible`;
+}
+
+function formatSavedQuoteDate(isoString: string) {
+  const date = new Date(isoString);
+
+  if (Number.isNaN(date.getTime())) {
+    return "Saved recently";
+  }
+
+  return date.toLocaleString("en-US", {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
+function getUpgradePrompt(usage: QuoteUsageSummary, apiLimitError: QuoteApiErrorPayload | null) {
+  if (apiLimitError?.upgradeHref) {
+    return {
+      title: apiLimitError.error,
+      description:
+        apiLimitError.feature === "daily_quotes"
+          ? "Upgrade in Billing to increase your quote capacity without waiting for the next 24-hour reset."
+          : "Open Billing to unlock more capability on your current account.",
+      href: apiLimitError.upgradeHref,
+      cta:
+        apiLimitError.upgradePlan !== null
+          ? `Upgrade to ${getBillingPlanLabel(apiLimitError.upgradePlan)}`
+          : "Manage Billing",
+    };
+  }
+
+  if (usage.hiddenSavedQuotes > 0 && usage.savedQuotesLimit !== null) {
+    return {
+      title: `${getBillingPlanLabel(usage.selectedPlan)} currently shows your newest ${usage.savedQuotesLimit} saved quotes.`,
+      description: `Upgrade in Billing to unlock ${usage.hiddenSavedQuotes} additional saved quote${
+        usage.hiddenSavedQuotes === 1 ? "" : "s"
+      } and keep a longer retained quote library.`,
+      href: MANAGE_BILLING_HREF,
+      cta: "Upgrade Billing",
+    };
+  }
+
+  if (!usage.exportEnabled) {
+    return {
+      title: "Export is locked on Starter.",
+      description: "Upgrade to Pro or Elite in Billing to export saved quotes for handoff, review, or archiving.",
+      href: MANAGE_BILLING_HREF,
+      cta: "Unlock Export",
+    };
+  }
+
+  return null;
+}
+
 export function ResultsPanel({
   result,
   loading,
   copied,
   errorMessage,
+  usage,
+  recentQuotes,
+  apiLimitError,
+  exporting,
   onNewQuote,
   onCopy,
   onClear,
+  onExport,
 }: ResultsPanelProps) {
+  const upgradePrompt = getUpgradePrompt(usage, apiLimitError);
+
   return (
     <Card className="surface-gradient premium-border h-full">
       <CardHeader className="gap-4">
@@ -48,6 +127,16 @@ export function ResultsPanel({
               <Copy className="size-4" />
               {copied ? "Copied" : "Copy"}
             </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              type="button"
+              onClick={onExport}
+              disabled={exporting || !usage.exportEnabled || recentQuotes.length === 0}
+            >
+              <Download className="size-4" />
+              {exporting ? "Exporting..." : "Export"}
+            </Button>
             <Button variant="secondary" size="sm" type="button" onClick={onClear}>
               <RotateCcw className="size-4" />
               Clear
@@ -59,6 +148,46 @@ export function ResultsPanel({
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-5">
+        <div className="grid gap-4 rounded-3xl border border-white/10 bg-[rgba(11,15,20,0.62)] p-4 sm:grid-cols-3">
+          <div>
+            <p className="text-xs uppercase tracking-[0.16em] text-brand-muted">Quotes</p>
+            <p className="mt-2 text-white">
+              {usage.quoteLimit === null
+                ? "Unlimited"
+                : `${usage.quotesUsed} used / ${usage.quoteLimit}`}
+            </p>
+            <p className="mt-1 text-xs text-brand-muted">
+              {usage.quoteLimit === null
+                ? "Trial and Elite accounts stay open-ended."
+                : `${usage.quotesRemaining ?? 0} remaining before the next reset.`}
+            </p>
+          </div>
+          <div>
+            <p className="text-xs uppercase tracking-[0.16em] text-brand-muted">Saved Quotes</p>
+            <p className="mt-2 text-white">{formatSavedQuotesLimit(usage)}</p>
+            <p className="mt-1 text-xs text-brand-muted">{formatHistoryWindow(usage.historyDays)}</p>
+          </div>
+          <div>
+            <p className="text-xs uppercase tracking-[0.16em] text-brand-muted">Export</p>
+            <p className="mt-2 text-white">{usage.exportEnabled ? "Enabled" : "Upgrade Required"}</p>
+            <p className="mt-1 text-xs text-brand-muted">
+              {usage.templatesEnabled ? "Templates included on this plan." : "Templates unlock on Elite."}
+            </p>
+          </div>
+        </div>
+
+        {upgradePrompt ? (
+          <div className="rounded-3xl border border-brand-cyan/20 bg-brand-cyan/10 p-5">
+            <p className="text-sm font-semibold text-white">{upgradePrompt.title}</p>
+            <p className="mt-2 text-sm leading-7 text-brand-text">{upgradePrompt.description}</p>
+            <div className="mt-4">
+              <GlowButton href={upgradePrompt.href} variant="secondary" trailingIcon={false}>
+                {upgradePrompt.cta}
+              </GlowButton>
+            </div>
+          </div>
+        ) : null}
+
         {errorMessage ? (
           <div className="rounded-3xl border border-rose-500/20 bg-rose-500/10 px-5 py-4 text-sm text-rose-100">
             {errorMessage}
@@ -153,6 +282,41 @@ export function ResultsPanel({
             </div>
           </div>
         ) : null}
+
+        <div className="rounded-3xl border border-white/10 bg-[rgba(11,15,20,0.62)] p-5">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h4 className="font-display text-xl text-white">Saved quote history</h4>
+              <p className="mt-2 text-sm leading-7 text-brand-muted">
+                RapidCleanAI saves each generated quote server-side and applies your current plan history rules automatically.
+              </p>
+            </div>
+            <Badge variant="secondary">{formatHistoryWindow(usage.historyDays)}</Badge>
+          </div>
+
+          {recentQuotes.length ? (
+            <div className="mt-5 space-y-3">
+              {recentQuotes.map((quote) => (
+                <div
+                  key={`${quote.id}-${quote.requestId}`}
+                  className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3"
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <p className="text-sm font-medium text-white">{money.format(quote.recommendedEstimate)}</p>
+                    <p className="text-xs uppercase tracking-[0.16em] text-brand-muted">
+                      {formatSavedQuoteDate(quote.createdAt)}
+                    </p>
+                  </div>
+                  <p className="mt-2 text-sm leading-7 text-brand-muted">{quote.prompt}</p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="mt-5 text-sm leading-7 text-brand-muted">
+              Generated quotes will start appearing here as soon as you create them.
+            </p>
+          )}
+        </div>
       </CardContent>
     </Card>
   );

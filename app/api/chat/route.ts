@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { createMockQuote, isMockQuoteResponse } from "@/lib/mock-quote";
+import { buildQuoteUsageHeaders, checkQuoteGenerationAllowance, recordGeneratedQuote } from "@/lib/quote-usage";
 import { checkRateLimit } from "@/lib/rate-limit";
+import { getBillingPlanLimits } from "@/lib/stripe";
 import { getServerUser } from "@/lib/supabase/auth";
 import { validateChatPromptInput } from "@/lib/validation";
 
@@ -39,13 +41,14 @@ function buildNoStoreHeaders(extraHeaders?: HeadersInit) {
 }
 
 function jsonError(message: string, status: number, extraHeaders?: HeadersInit) {
-  return NextResponse.json(
-    { error: message },
-    {
-      status,
-      headers: buildNoStoreHeaders(extraHeaders),
-    },
-  );
+  return jsonResponse({ error: message }, status, extraHeaders);
+}
+
+function jsonResponse(body: Record<string, unknown>, status = 200, extraHeaders?: HeadersInit) {
+  return NextResponse.json(body, {
+    status,
+    headers: buildNoStoreHeaders(extraHeaders),
+  });
 }
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
@@ -128,6 +131,16 @@ function getClientAddress(request: Request) {
   return forwardedFor?.split(",")[0]?.trim() || "unknown";
 }
 
+async function waitForMockResponse(ms: number) {
+  if (ms <= 0) {
+    return;
+  }
+
+  await new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
+
 export function OPTIONS() {
   return new NextResponse(null, {
     status: 204,
@@ -144,7 +157,6 @@ export async function POST(request: Request) {
   }
 
   let userId = "anonymous";
-
   try {
     const { user } = await getServerUser();
     if (!user) {
@@ -195,15 +207,52 @@ export async function POST(request: Request) {
     return jsonError(parsedPrompt.message, 400, rateLimitHeaders);
   }
 
+  let quoteAllowance: Awaited<ReturnType<typeof checkQuoteGenerationAllowance>> | null = null;
+
   try {
+    quoteAllowance = await checkQuoteGenerationAllowance(userId);
+  } catch (error) {
+    logUnexpectedFailure("Quote usage verification failure", error);
+    return jsonError("Unable to verify your quote usage right now.", 503, rateLimitHeaders);
+  }
+
+  if (!quoteAllowance.allowed) {
+    return jsonResponse(quoteAllowance.error, quoteAllowance.status, rateLimitHeaders);
+  }
+
+  if (!quoteAllowance.plan.hasAccess) {
+    return jsonResponse(
+      {
+        error: "Complete checkout to activate dashboard access.",
+        code: "billing_access_required",
+      },
+      403,
+      rateLimitHeaders,
+    );
+  }
+
+  try {
+    await waitForMockResponse(getBillingPlanLimits(quoteAllowance.plan.effectivePlan).mockResponseDelayMs);
+
     const result = createMockQuote(parsedPrompt.data);
 
     if (!isMockQuoteResponse(result)) {
       return jsonError("Unable to generate a valid quote right now.", 502, rateLimitHeaders);
     }
 
+    const updatedUsage = await recordGeneratedQuote({
+      userId,
+      prompt: parsedPrompt.data,
+      quote: result,
+      plan: quoteAllowance.plan,
+    });
+
     return NextResponse.json(result, {
-      headers: buildNoStoreHeaders(rateLimitHeaders),
+      headers: buildNoStoreHeaders({
+        ...rateLimitHeaders,
+        ...buildQuoteUsageHeaders(updatedUsage),
+        Vary: "Cookie",
+      }),
     });
   } catch (error) {
     logUnexpectedFailure("Quote generation failure", error);

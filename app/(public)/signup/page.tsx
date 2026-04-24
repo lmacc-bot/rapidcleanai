@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { getSignupErrorMessage } from "@/lib/feedback";
 import { getServerUser } from "@/lib/supabase/auth";
 import { signUpAction } from "@/lib/supabase/actions";
-import { STRIPE_LINK } from "@/lib/stripe";
+import { BILLING_ENTRY_HREF, normalizeBillingPlan } from "@/lib/stripe";
 import {
   MAX_EMAIL_LENGTH,
   MAX_NAME_LENGTH,
@@ -41,6 +41,7 @@ export default async function SignupPage({ searchParams }: SignupPageProps) {
 
   const params = searchParams ? await searchParams : {};
   const error = getSignupErrorMessage(params.error) ?? fallbackError;
+  const selectedPlan = normalizeBillingPlan(typeof params.plan === "string" ? params.plan : undefined);
 
   return (
     <div className="container flex min-h-[calc(100vh-10rem)] items-center py-12">
@@ -57,6 +58,7 @@ export default async function SignupPage({ searchParams }: SignupPageProps) {
               </p>
             ) : null}
             <form action={signUpAction} className="space-y-5">
+              <input type="hidden" name="selectedPlan" value={selectedPlan} />
               <div className="space-y-2">
                 <Label htmlFor="name">Name</Label>
                 <Input
@@ -114,9 +116,9 @@ export default async function SignupPage({ searchParams }: SignupPageProps) {
             <p className="text-xs uppercase tracking-[0.18em] text-brand-cyan">Why sign up now</p>
             <h2 className="font-display text-4xl text-white">Start with one clean SaaS workflow.</h2>
             <p className="text-base leading-8 text-brand-muted">
-              Create an account, access the protected dashboard, and pair it with hosted Stripe checkout to launch quickly.
+              Create an account, store your plan choice, and start a full-access Stripe trial without forcing a cancellation decision upfront.
             </p>
-            <GlowButton href={STRIPE_LINK}>Start Now</GlowButton>
+            <GlowButton href={BILLING_ENTRY_HREF}>View Plans</GlowButton>
           </CardContent>
         </Card>
       </div>

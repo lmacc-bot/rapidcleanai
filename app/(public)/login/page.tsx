@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { getInfoMessage, getLoginErrorMessage } from "@/lib/feedback";
 import { getServerUser } from "@/lib/supabase/auth";
 import { signInAction } from "@/lib/supabase/actions";
-import { STRIPE_LINK } from "@/lib/stripe";
+import { BILLING_ENTRY_HREF } from "@/lib/stripe";
 import { MAX_EMAIL_LENGTH, MAX_PASSWORD_LENGTH } from "@/lib/validation";
 
 export const metadata: Metadata = {
@@ -37,6 +37,18 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
   const params = searchParams ? await searchParams : {};
   const error = getLoginErrorMessage(params.error) ?? fallbackError;
   const message = getInfoMessage(params.message);
+  const redirectTo = typeof params.redirect === "string" && params.redirect.startsWith("/")
+    ? params.redirect
+    : null;
+  const signupHref = (() => {
+    if (!redirectTo) {
+      return "/signup";
+    }
+
+    const redirectUrl = new URL(redirectTo, "http://localhost");
+    const selectedPlan = redirectUrl.pathname === "/checkout/start" ? redirectUrl.searchParams.get("plan") : null;
+    return typeof selectedPlan === "string" ? `/signup?plan=${encodeURIComponent(selectedPlan)}` : "/signup";
+  })();
 
   return (
     <div className="container flex min-h-[calc(100vh-10rem)] items-center py-12">
@@ -58,6 +70,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
               </p>
             ) : null}
             <form action={signInAction} className="space-y-5">
+              {redirectTo ? <input type="hidden" name="redirectTo" value={redirectTo} /> : null}
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <Input
@@ -91,7 +104,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
             </form>
             <p className="text-sm text-brand-muted">
               Don't have an account?{" "}
-              <Link href="/signup" className="text-brand-cyan transition hover:text-white">
+              <Link href={signupHref} className="text-brand-cyan transition hover:text-white">
                 Sign up
               </Link>
             </p>
@@ -107,7 +120,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
             <p className="text-base leading-8 text-brand-muted">
               Sign in to access the quote workspace, mock AI results, and the Phase 1 dashboard built for speed.
             </p>
-            <GlowButton href={STRIPE_LINK}>Start Now</GlowButton>
+            <GlowButton href={BILLING_ENTRY_HREF}>Start Now</GlowButton>
           </CardContent>
         </Card>
       </div>

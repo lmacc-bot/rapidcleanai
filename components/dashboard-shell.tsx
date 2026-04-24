@@ -2,6 +2,13 @@
 
 import { useState } from "react";
 import { isMockQuoteResponse, type MockQuoteResponse } from "@/lib/mock-quote";
+import {
+  isQuoteApiErrorPayload,
+  type QuoteApiErrorPayload,
+  type QuoteUsageSummary,
+  type SavedQuoteSummary,
+} from "@/lib/quote-limits";
+import { isBillingPlanId } from "@/lib/stripe";
 import { validateChatPromptInput } from "@/lib/validation";
 import { ChatPanel, type ChatMessage } from "@/components/chat-panel";
 import { ResultsPanel } from "@/components/results-panel";
@@ -35,25 +42,111 @@ function buildCopyPayload(result: MockQuoteResponse) {
 }
 
 function getApiErrorMessage(payload: unknown) {
-  if (
-    payload &&
-    typeof payload === "object" &&
-    "error" in payload &&
-    typeof payload.error === "string"
-  ) {
+  if (isQuoteApiErrorPayload(payload)) {
     return payload.error;
   }
 
   return "Unable to generate a quote right now.";
 }
 
-export function DashboardShell() {
+function readNullableNumberHeader(value: string | null) {
+  if (!value || value === "unlimited") {
+    return null;
+  }
+
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function readBooleanHeader(value: string | null, fallback: boolean) {
+  if (value === "true") {
+    return true;
+  }
+
+  if (value === "false") {
+    return false;
+  }
+
+  return fallback;
+}
+
+function getUsageFromHeaders(headers: Headers, current: QuoteUsageSummary): QuoteUsageSummary {
+  const aiSpeedHeader = headers.get("X-Quote-AI-Speed");
+  const aiSpeed =
+    aiSpeedHeader === "slower" || aiSpeedHeader === "fast" || aiSpeedHeader === "fastest"
+      ? aiSpeedHeader
+      : current.aiSpeed;
+  const selectedPlanHeader = headers.get("X-Quote-Plan-Selected");
+  const effectivePlanHeader = headers.get("X-Quote-Plan-Effective");
+
+  return {
+    ...current,
+    selectedPlan: isBillingPlanId(selectedPlanHeader) ? selectedPlanHeader : current.selectedPlan,
+    effectivePlan: isBillingPlanId(effectivePlanHeader) ? effectivePlanHeader : current.effectivePlan,
+    quoteLimit: readNullableNumberHeader(headers.get("X-Quote-Limit")) ?? current.quoteLimit,
+    quotesUsed: readNullableNumberHeader(headers.get("X-Quote-Used")) ?? current.quotesUsed,
+    quotesRemaining:
+      readNullableNumberHeader(headers.get("X-Quote-Remaining")) ?? current.quotesRemaining,
+    resetsAt: headers.get("X-Quote-Reset-At") || current.resetsAt,
+    savedQuotesVisible:
+      readNullableNumberHeader(headers.get("X-Saved-Quotes-Visible")) ?? current.savedQuotesVisible,
+    savedQuotesLimit:
+      readNullableNumberHeader(headers.get("X-Saved-Quotes-Limit")) ?? current.savedQuotesLimit,
+    hiddenSavedQuotes:
+      readNullableNumberHeader(headers.get("X-Saved-Quotes-Hidden")) ?? current.hiddenSavedQuotes,
+    historyDays: readNullableNumberHeader(headers.get("X-Quote-History-Days")) ?? current.historyDays,
+    exportEnabled: readBooleanHeader(headers.get("X-Quote-Export-Enabled"), current.exportEnabled),
+    templatesEnabled: readBooleanHeader(
+      headers.get("X-Quote-Templates-Enabled"),
+      current.templatesEnabled,
+    ),
+    aiSpeed,
+  };
+}
+
+function buildSavedQuoteSummary(result: MockQuoteResponse, usage: QuoteUsageSummary): SavedQuoteSummary {
+  return {
+    id: Date.now(),
+    prompt: result.prompt,
+    createdAt: result.generatedAt,
+    requestId: result.requestId,
+    recommendedEstimate: result.recommendedEstimate.recommended,
+    summary: result.summary,
+    planAtGeneration: usage.effectivePlan,
+  };
+}
+
+function applyUsageError(current: QuoteUsageSummary, payload: QuoteApiErrorPayload) {
+  if (payload.feature !== "daily_quotes") {
+    return current;
+  }
+
+  return {
+    ...current,
+    quoteLimit: payload.limit ?? current.quoteLimit,
+    quotesUsed: payload.used ?? current.quotesUsed,
+    quotesRemaining: payload.remaining ?? current.quotesRemaining,
+    resetsAt: payload.resetsAt ?? current.resetsAt,
+  };
+}
+
+export function DashboardShell({
+  initialUsage,
+  initialRecentQuotes,
+}: {
+  initialUsage: QuoteUsageSummary;
+  initialRecentQuotes: SavedQuoteSummary[];
+}) {
   const [prompt, setPrompt] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([initialMessage]);
   const [result, setResult] = useState<MockQuoteResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [usage, setUsage] = useState(initialUsage);
+  const [recentQuotes, setRecentQuotes] = useState(initialRecentQuotes);
+  const [apiLimitError, setApiLimitError] = useState<QuoteApiErrorPayload | null>(null);
+  const [exporting, setExporting] = useState(false);
 
   async function submitPrompt(value: string) {
     const parsedPrompt = validateChatPromptInput(value);
@@ -67,6 +160,7 @@ export function DashboardShell() {
     setLoading(true);
     setCopied(false);
     setErrorMessage(null);
+    setApiLimitError(null);
     setPrompt("");
     setMessages((current) => [
       ...current,
@@ -90,10 +184,16 @@ export function DashboardShell() {
 
       const payload = (await response.json().catch(() => null)) as
         | MockQuoteResponse
-        | { error?: string }
+        | QuoteApiErrorPayload
         | null;
 
       if (!response.ok) {
+        const parsedApiError = isQuoteApiErrorPayload(payload) ? payload : null;
+        if (parsedApiError) {
+          setApiLimitError(parsedApiError);
+          setUsage((current) => applyUsageError(current, parsedApiError));
+        }
+
         throw new Error(getApiErrorMessage(payload));
       }
 
@@ -101,7 +201,10 @@ export function DashboardShell() {
         throw new Error("The quote response was invalid. Please try again.");
       }
 
+      const nextUsage = getUsageFromHeaders(response.headers, usage);
       setResult(payload);
+      setUsage(nextUsage);
+      setRecentQuotes((current) => [buildSavedQuoteSummary(payload, nextUsage), ...current].slice(0, 5));
       setMessages((current) => [
         ...current,
         {
@@ -125,6 +228,49 @@ export function DashboardShell() {
       ]);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleExport() {
+    setExporting(true);
+    setErrorMessage(null);
+
+    try {
+      const response = await fetch("/api/quotes/export", {
+        method: "GET",
+        cache: "no-store",
+        credentials: "same-origin",
+      });
+      const payload = response.ok
+        ? null
+        : ((await response.json().catch(() => null)) as QuoteApiErrorPayload | null);
+
+      if (!response.ok) {
+        const parsedApiError = isQuoteApiErrorPayload(payload) ? payload : null;
+        if (parsedApiError) {
+          setApiLimitError(parsedApiError);
+        }
+
+        throw new Error(getApiErrorMessage(payload));
+      }
+
+      const blob = await response.blob();
+      const objectUrl = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      const disposition = response.headers.get("Content-Disposition");
+      const filenameMatch = disposition?.match(/filename=\"?([^"]+)\"?/i);
+      link.href = objectUrl;
+      link.download = filenameMatch?.[1] ?? "rapidcleanai-quotes.json";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(objectUrl);
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error ? error.message : "Unable to export quotes right now.",
+      );
+    } finally {
+      setExporting(false);
     }
   }
 
@@ -165,15 +311,21 @@ export function DashboardShell() {
         messages={messages}
         samplePrompts={samplePrompts}
         loading={loading}
+        usage={usage}
       />
       <ResultsPanel
         result={result}
         loading={loading}
         copied={copied}
         errorMessage={errorMessage}
+        usage={usage}
+        recentQuotes={recentQuotes}
+        apiLimitError={apiLimitError}
+        exporting={exporting}
         onNewQuote={handleNewQuote}
         onCopy={handleCopy}
         onClear={handleClear}
+        onExport={handleExport}
       />
     </div>
   );

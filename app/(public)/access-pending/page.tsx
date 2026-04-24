@@ -5,6 +5,13 @@ import { Card, CardContent } from "@/components/ui/card";
 import { getBillingAccessStatus } from "@/lib/supabase/access";
 import { siteConfig } from "@/lib/site";
 import { getServerUser } from "@/lib/supabase/auth";
+import {
+  BILLING_PLANS,
+  getBillingPlanLabel,
+  getCheckoutStartHref,
+  normalizeBillingPlan,
+  TRIAL_PERIOD_DAYS,
+} from "@/lib/stripe";
 
 export const metadata: Metadata = {
   title: "Access Pending",
@@ -18,15 +25,20 @@ type AccessPendingPageProps = {
 function getSetupMessage(value: string | string[] | undefined) {
   return value === "setup_issue"
     ? "Your account was created, but we still need to finish access setup on our side. Please contact support if this does not update soon."
+    : value === "checkout_unavailable"
+      ? "We could not start Stripe checkout right now. Please try again in a moment."
     : null;
 }
 
 export default async function AccessPendingPage({ searchParams }: AccessPendingPageProps) {
+  let selectedPlan = normalizeBillingPlan(undefined);
+
   try {
     const { user } = await getServerUser();
 
     if (user) {
       const access = await getBillingAccessStatus(user.id);
+      selectedPlan = normalizeBillingPlan(access.plan);
 
       if (access.hasAccess) {
         redirect("/dashboard");
@@ -53,7 +65,7 @@ export default async function AccessPendingPage({ searchParams }: AccessPendingP
                 Your account was created successfully. Complete checkout to activate dashboard access.
               </p>
               <p className="max-w-2xl text-base leading-8 text-brand-muted">
-                If you already completed payment, your access may still be processing.
+                Start a {TRIAL_PERIOD_DAYS}-day full-access trial now. RapidCleanAI unlocks Elite-level access during the trial, then keeps you on the plan you selected unless you downgrade later.
               </p>
             </div>
 
@@ -64,8 +76,8 @@ export default async function AccessPendingPage({ searchParams }: AccessPendingP
             ) : null}
 
             <div className="flex flex-wrap gap-3">
-              <GlowButton href="/" trailingIcon={false}>
-                Back to home
+              <GlowButton href={getCheckoutStartHref(selectedPlan)} trailingIcon={false}>
+                Start {getBillingPlanLabel(selectedPlan)} Trial
               </GlowButton>
               <GlowButton
                 href={`mailto:${siteConfig.pageSupportEmail}`}
@@ -91,19 +103,62 @@ export default async function AccessPendingPage({ searchParams }: AccessPendingP
           <div className="rounded-[2rem] border border-white/10 bg-white/6 p-6">
             <p className="text-xs uppercase tracking-[0.18em] text-brand-cyan">What happens next</p>
             <div className="mt-5 space-y-4 text-sm leading-7 text-brand-muted">
-              <p>We keep your account in a pending state until billing access is activated.</p>
+              <p>Pick a plan and start your Stripe subscription checkout to unlock the full-access trial.</p>
               <p>
-                Once your access is turned on, you can sign in and head straight into the protected
-                dashboard.
+                During the trial, every account gets Elite-level dashboard access even if you chose
+                Starter or Pro for post-trial billing.
               </p>
               <p>
-                If you need a manual status check, reach out to {siteConfig.pageSupportEmail} and
-                our team can review it with you.
+                After checkout, you can downgrade, upgrade, or cancel later in Stripe Billing
+                Portal without losing the option to stay subscribed.
               </p>
             </div>
           </div>
         </CardContent>
       </Card>
+
+      <div className="mx-auto mt-10 grid w-full max-w-6xl gap-5 lg:grid-cols-3">
+        {(Object.entries(BILLING_PLANS) as [keyof typeof BILLING_PLANS, (typeof BILLING_PLANS)[keyof typeof BILLING_PLANS]][]).map(
+          ([planId, plan]) => {
+            const isSelected = planId === selectedPlan;
+
+            return (
+              <Card
+                key={planId}
+                className={`surface-gradient premium-border ${isSelected ? "glow-ring" : ""}`}
+              >
+                <CardContent className="space-y-5 p-6">
+                  <div className="flex items-center justify-between gap-3">
+                    <div>
+                      <p className="text-xs uppercase tracking-[0.18em] text-brand-cyan">{plan.badge}</p>
+                      <h2 className="mt-3 font-display text-3xl text-white">{plan.name}</h2>
+                    </div>
+                    {isSelected ? (
+                      <span className="rounded-full border border-brand-neon/20 bg-brand-neon/10 px-3 py-1 text-xs uppercase tracking-[0.18em] text-brand-neon">
+                        Selected
+                      </span>
+                    ) : null}
+                  </div>
+                  <p className="text-sm leading-7 text-brand-muted">{plan.description}</p>
+                  <ul className="grid gap-3 text-sm text-brand-text">
+                    {plan.highlights.map((highlight) => (
+                      <li
+                        key={highlight}
+                        className="rounded-2xl border border-white/8 bg-white/5 px-4 py-3"
+                      >
+                        {highlight}
+                      </li>
+                    ))}
+                  </ul>
+                  <GlowButton href={getCheckoutStartHref(planId)} trailingIcon={false}>
+                    Start {plan.name} Trial
+                  </GlowButton>
+                </CardContent>
+              </Card>
+            );
+          },
+        )}
+      </div>
     </div>
   );
 }

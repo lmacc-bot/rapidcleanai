@@ -3,7 +3,7 @@ import { GlowButton } from "@/components/glow-button";
 import { SectionHeading } from "@/components/section-heading";
 import { Card, CardContent } from "@/components/ui/card";
 import { faqItems } from "@/lib/site";
-import { STRIPE_LINK } from "@/lib/stripe";
+import { BILLING_ENTRY_HREF } from "@/lib/stripe";
 
 export const metadata: Metadata = {
   title: "FAQ",
@@ -30,7 +30,7 @@ export default function FaqPage() {
         ))}
       </div>
       <div className="mt-14 flex justify-center">
-        <GlowButton href={STRIPE_LINK}>Start Now</GlowButton>
+        <GlowButton href={BILLING_ENTRY_HREF}>Start Now</GlowButton>
       </div>
     </div>
   );

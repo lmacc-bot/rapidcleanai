@@ -25,7 +25,7 @@ import {
   pricingFeatures,
   trustBullets,
 } from "@/lib/site";
-import { STRIPE_LINK } from "@/lib/stripe";
+import { BILLING_ENTRY_HREF } from "@/lib/stripe";
 import { cn } from "@/lib/utils";
 
 export default function HomePage() {
@@ -44,7 +44,7 @@ export default function HomePage() {
               </p>
             </div>
             <div className="flex flex-col gap-3 sm:flex-row">
-              <GlowButton href={STRIPE_LINK} className="justify-center sm:justify-start">
+              <GlowButton href={BILLING_ENTRY_HREF} className="justify-center sm:justify-start">
                 Start Now
               </GlowButton>
               <Link href="/pricing" className={cn(buttonVariants({ variant: "secondary", size: "lg" }), "rounded-2xl")}>
@@ -184,7 +184,7 @@ export default function HomePage() {
                 <p className="text-xs uppercase tracking-[0.18em] text-brand-muted">Why it matters</p>
                 <h3 className="mt-3 font-display text-3xl text-white">Simple enough to launch now</h3>
                 <p className="mt-4 text-sm leading-7 text-brand-muted">
-                  Stripe checkout is ready, auth is protected, and the dashboard is already positioned for a real AI backend later.
+                  Subscription checkout is ready, auth is protected, and the dashboard is already positioned for a real AI backend later.
                 </p>
               </div>
               <div className="space-y-3">
@@ -203,7 +203,7 @@ export default function HomePage() {
           <div className="grid gap-5">
             <div className="rounded-3xl border border-brand-neon/20 bg-brand-neon/10 p-6 glow-ring">
               <p className="text-xs uppercase tracking-[0.18em] text-brand-neon">Monetization Ready</p>
-              <p className="mt-3 text-3xl font-display text-white">Hosted Stripe checkout is already wired.</p>
+              <p className="mt-3 text-3xl font-display text-white">Trial-first Stripe subscriptions are already wired.</p>
             </div>
             <div className="rounded-3xl border border-brand-cyan/20 bg-brand-cyan/10 p-6 cyan-glow">
               <p className="text-xs uppercase tracking-[0.18em] text-brand-cyan">Protected Access</p>
@@ -235,11 +235,16 @@ export default function HomePage() {
       <section className="container mt-24">
         <SectionHeading
           eyebrow="Pricing"
-          title="Start simple with one launch-ready plan."
-          description="One clear offer keeps the buying decision fast and lets you start collecting subscription revenue immediately."
+          title="Start with a full-access trial, then keep the plan that fits."
+          description="Let customers choose Starter, Pro, or Elite in Stripe, then retain them with upgrades and downgrades instead of forcing cancellation."
         />
         <div className="mt-10">
-          <PricingCard features={pricingFeatures} />
+          <PricingCard
+            title="Flexible Subscription Flow"
+            features={pricingFeatures}
+            ctaLabel="Compare Plans"
+            description="Every new account starts with a 14-day full-access trial. After that, customers stay on the selected plan and can change it anytime in Billing Portal."
+          />
         </div>
       </section>
 
@@ -255,7 +260,7 @@ export default function HomePage() {
                 Keep Phase 1 focused on what matters: conversion, checkout, protected access, and a dashboard your customers can already use.
               </p>
             </div>
-            <GlowButton href={STRIPE_LINK} className="justify-center">
+            <GlowButton href={BILLING_ENTRY_HREF} className="justify-center">
               Start Now
             </GlowButton>
           </CardContent>

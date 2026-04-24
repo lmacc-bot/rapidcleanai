@@ -1,6 +1,6 @@
 # RapidCleanAI
 
-Production-ready Phase 1 MVP SaaS built with Next.js App Router, TypeScript, Tailwind CSS, shadcn-style UI primitives, Supabase auth, and hosted Stripe checkout.
+Production-ready Phase 1 MVP SaaS built with Next.js App Router, TypeScript, Tailwind CSS, shadcn-style UI primitives, Supabase auth, and Stripe subscription checkout.
 
 ## What is included
 
@@ -11,7 +11,8 @@ Production-ready Phase 1 MVP SaaS built with Next.js App Router, TypeScript, Tai
 - Protected dashboard: `/dashboard`
 - Supabase email/password auth
 - Basic `profiles` table support with SQL schema
-- Hosted Stripe checkout via one Pro Plan link
+- Stripe subscription checkout with Starter, Pro, and Elite plan selection
+- 14-day full-access trial with downgrade-friendly retention flow
 - Stripe webhook route for automatic billing access activation
 - Stubbed `/api/chat` route that returns structured mock JSON
 - Vercel-ready app structure
@@ -99,6 +100,9 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=YOUR_SUPABASE_ANON_KEY
 SUPABASE_SERVICE_ROLE_KEY=YOUR_SUPABASE_SERVICE_ROLE_KEY
 STRIPE_SECRET_KEY=sk_test_YOUR_STRIPE_SECRET_KEY
 STRIPE_WEBHOOK_SECRET=whsec_YOUR_STRIPE_WEBHOOK_SECRET
+STRIPE_STARTER_PRICE_ID=price_YOUR_STARTER_PRICE_ID
+STRIPE_PRO_PRICE_ID=price_YOUR_PRO_PRICE_ID
+STRIPE_ELITE_PRICE_ID=price_YOUR_ELITE_PRICE_ID
 ```
 
 Use the publishable key when available. The app also supports the legacy anon key for compatibility. `SUPABASE_SERVICE_ROLE_KEY`, `STRIPE_SECRET_KEY`, and `STRIPE_WEBHOOK_SECRET` are server-only. Never expose them in the browser.
@@ -137,33 +141,17 @@ Visit [http://localhost:3000](http://localhost:3000).
 4. Deploy.
 5. In Vercel, set `NEXT_PUBLIC_SITE_URL` to your production domain.
 
-## Stripe link wiring
+## Stripe subscription flow
 
-The app uses one Stripe payment link only:
-
-```ts
-// lib/stripe.ts
-export const STRIPE_LINK = "https://buy.stripe.com/cNi6oA3nH6Ot7vdc9K00000";
-```
-
-It is used in:
-
-- Public navbar `Start Now`
-- Homepage hero `Start Now`
-- Homepage pricing preview `Start Now`
-- Homepage final CTA `Start Now`
-- Pricing page `Start Now`
-- Features page `Start Now`
-- FAQ page `Start Now`
-- Contact page `Start Now`
-- Login page sidebar `Start Now`
-- Signup page sidebar `Start Now`
-- Dashboard navbar `Billing`
+- Public CTAs now send users to `/pricing`, where they can choose Starter, Pro, or Elite.
+- `/checkout/start?plan=...` creates a Stripe Checkout Session in `subscription` mode with `trial_period_days = 14`.
+- During the trial, the webhook marks `billing_access.has_access = true` and stores the selected post-trial plan.
+- The dashboard shows trial status and remaining days, and `Manage Billing` opens Stripe Billing Portal for downgrade, upgrade, or cancel actions.
 
 ## Auth flow
 
 - `/login` signs users in with Supabase email/password auth
-- `/signup` creates a user, stores `full_name` in user metadata, and creates a `billing_access` row with `has_access = false`, `plan = "pro"`, and `payment_status = "pending"`
+- `/signup` creates a user, stores `full_name` in user metadata, and creates a `billing_access` row with `has_access = false`, the selected plan, and `payment_status = "pending"`
 - `supabase/schema.sql` creates a `profiles` table and auto-inserts the basic profile from `auth.users`
 - `/dashboard` is protected by middleware plus server-side auth and billing access checks
 - Authenticated users without `billing_access.has_access = true` are redirected to `/access-pending`
@@ -178,32 +166,44 @@ It is used in:
 - The chat route includes an MVP in-memory rate limiter. Replace it with a shared backing store before relying on it across multiple server instances.
 - The mock AI layer strips prompt-injection-style lines, keeps output constrained to structured JSON, and validates the JSON shape before rendering.
 - The UI does not render raw HTML, and the app adds baseline security headers including a CSP, `nosniff`, frame protection, referrer policy, and permissions policy.
-- Stripe hosted checkout is the only billing action on the client. Client-side subscription state is not trusted.
-- Billing access is enforced server-side through `public.billing_access`. The Stripe webhook now promotes matching rows to active access automatically after payment confirmation.
+- Stripe Checkout and Billing Portal are the only billing actions surfaced to the client. Client-side subscription state is not trusted.
+- Billing access is enforced server-side through `public.billing_access`. The Stripe webhook now syncs trialing, active, downgrade, upgrade, and cancellation changes back into that table.
 
 ## Stripe webhook setup
 
 1. Add `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET` to `.env.local` and your Vercel project.
-2. In Stripe, create a webhook endpoint that points to:
+2. In Stripe, create three recurring prices and save their IDs into:
+
+```text
+STRIPE_STARTER_PRICE_ID
+STRIPE_PRO_PRICE_ID
+STRIPE_ELITE_PRICE_ID
+```
+
+3. In Stripe, create a webhook endpoint that points to:
 
 ```text
 https://YOUR_DOMAIN/api/stripe/webhook
 ```
 
-3. Subscribe that webhook to at least:
+4. Subscribe that webhook to at least:
    - `checkout.session.completed`
    - `invoice.paid`
-4. In your Stripe Payment Link settings, set the post-purchase redirect to:
+   - `customer.subscription.updated`
+   - `customer.subscription.deleted`
+5. Configure Stripe Billing Portal with your product catalog so customers can downgrade, upgrade, or cancel.
+6. Stripe Checkout should return customers to:
 
 ```text
 https://YOUR_DOMAIN/checkout/success
 ```
 
-5. The webhook uses the customer email from Stripe to find the matching `public.billing_access` row and updates it to:
-   - `has_access = true`
-   - `payment_status = "active"`
-   - `plan = "pro"`
-6. For this MVP email-based matching to work reliably, customers should complete checkout with the same email address they used at signup.
+7. The webhook uses the customer email from Stripe to find the matching `public.billing_access` row and updates it based on subscription status:
+   - `trialing` -> `has_access = true`
+   - `active` -> `has_access = true`
+   - `canceled` -> `has_access = false`
+   - `plan` -> the selected Stripe price tier
+8. For this MVP email-based matching to work reliably, customers should complete checkout with the same email address they used at signup.
 
 If a payment arrives before a matching `billing_access` row exists, the webhook logs a safe warning and returns success so Stripe does not keep retrying a non-actionable event.
 
@@ -212,7 +212,7 @@ If a payment arrives before a matching `billing_access` row exists, the webhook 
 If you use Stripe CLI locally, forward the relevant events to your local app:
 
 ```bash
-stripe listen --events checkout.session.completed,invoice.paid --forward-to localhost:3000/api/stripe/webhook
+stripe listen --events checkout.session.completed,invoice.paid,customer.subscription.updated,customer.subscription.deleted --forward-to localhost:3000/api/stripe/webhook
 ```
 
 Copy the webhook signing secret printed by Stripe CLI into `STRIPE_WEBHOOK_SECRET` while testing locally.

@@ -5,7 +5,7 @@ import { GlowButton } from "@/components/glow-button";
 import { SectionHeading } from "@/components/section-heading";
 import { Card, CardContent } from "@/components/ui/card";
 import { siteConfig } from "@/lib/site";
-import { STRIPE_LINK } from "@/lib/stripe";
+import { BILLING_ENTRY_HREF } from "@/lib/stripe";
 
 export const metadata: Metadata = {
   title: "Contact",
@@ -45,11 +45,11 @@ export default function ContactPage() {
           <Card className="surface-gradient premium-border">
             <CardContent className="space-y-4 p-6">
               <p className="text-xs uppercase tracking-[0.18em] text-brand-neon">Need to move quickly?</p>
-              <h2 className="font-display text-3xl text-white">Start the Pro Plan now.</h2>
+              <h2 className="font-display text-3xl text-white">Start your trial and pick a plan later.</h2>
               <p className="text-sm leading-7 text-brand-muted">
-                Checkout is already wired through Stripe, so you can start collecting subscription revenue immediately.
+                Stripe checkout is already set up for Starter, Pro, and Elite, and Billing Portal makes downgrades easy before or after trial.
               </p>
-              <GlowButton href={STRIPE_LINK}>Start Now</GlowButton>
+              <GlowButton href={BILLING_ENTRY_HREF}>Start Now</GlowButton>
             </CardContent>
           </Card>
         </div>

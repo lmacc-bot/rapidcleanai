@@ -18,8 +18,8 @@ export default function CheckoutCancelPage() {
               Your checkout was canceled
             </h1>
             <p className="max-w-2xl text-base leading-8 text-brand-muted">
-              No payment was completed, and your dashboard access will stay pending until checkout
-              is finished successfully.
+              No subscription trial was started, and your dashboard access will stay pending until
+              you complete Stripe checkout successfully.
             </p>
           </div>
 

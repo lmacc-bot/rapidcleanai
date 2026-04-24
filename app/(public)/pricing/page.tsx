@@ -1,14 +1,17 @@
 import type { Metadata } from "next";
 import { GlowButton } from "@/components/glow-button";
-import { PricingCard } from "@/components/pricing-card";
 import { SectionHeading } from "@/components/section-heading";
 import { Card, CardContent } from "@/components/ui/card";
-import { pricingFaqItems, pricingFeatures } from "@/lib/site";
-import { STRIPE_LINK } from "@/lib/stripe";
+import { pricingFaqItems } from "@/lib/site";
+import {
+  BILLING_PLANS,
+  getCheckoutStartHref,
+  TRIAL_PERIOD_DAYS,
+} from "@/lib/stripe";
 
 export const metadata: Metadata = {
   title: "Pricing",
-  description: "Simple pricing for RapidCleanAI. One Pro Plan at $49 per month.",
+  description: "Choose Starter, Pro, or Elite with a 14-day full-access trial.",
 };
 
 export default function PricingPage() {
@@ -17,20 +20,54 @@ export default function PricingPage() {
       <SectionHeading
         eyebrow="Pricing"
         title="Simple pricing. Powerful results."
-        description="One plan, one hosted checkout link, and one clear path to launch."
+        description={`Start with ${TRIAL_PERIOD_DAYS} days of full Elite-level access, then keep the plan you picked or downgrade later in Stripe Billing Portal.`}
         align="center"
       />
 
-      <div className="mx-auto mt-10 max-w-5xl">
-        <PricingCard features={pricingFeatures} />
+      <div className="mx-auto mt-10 grid max-w-6xl gap-5 lg:grid-cols-3">
+        {(Object.entries(BILLING_PLANS) as [keyof typeof BILLING_PLANS, (typeof BILLING_PLANS)[keyof typeof BILLING_PLANS]][]).map(
+          ([planId, plan]) => (
+            <Card
+              key={planId}
+              className={`surface-gradient premium-border ${planId === "pro" ? "glow-ring" : ""}`}
+            >
+              <CardContent className="space-y-6 p-7">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="text-xs uppercase tracking-[0.18em] text-brand-cyan">{plan.badge}</p>
+                    <h2 className="mt-3 font-display text-3xl text-white">{plan.name}</h2>
+                  </div>
+                  <div className="rounded-2xl border border-brand-neon/20 bg-brand-neon/10 px-4 py-3 text-right">
+                    <div className="font-display text-3xl font-semibold text-brand-neon">
+                      {TRIAL_PERIOD_DAYS} days
+                    </div>
+                    <div className="text-sm text-brand-muted">full access trial</div>
+                  </div>
+                </div>
+                <p className="text-sm leading-7 text-brand-muted">{plan.description}</p>
+                <ul className="grid gap-3 text-sm text-brand-text">
+                  {plan.highlights.map((highlight) => (
+                    <li
+                      key={highlight}
+                      className="rounded-2xl border border-white/8 bg-white/5 px-4 py-3"
+                    >
+                      {highlight}
+                    </li>
+                  ))}
+                </ul>
+                <GlowButton href={getCheckoutStartHref(planId)}>Start {plan.name} Trial</GlowButton>
+              </CardContent>
+            </Card>
+          ),
+        )}
       </div>
 
       <div className="mx-auto mt-8 grid max-w-5xl gap-4 md:grid-cols-2 xl:grid-cols-4">
         {[
-          "Cancel anytime",
-          "No contracts",
-          "Secure checkout powered by Stripe",
-          "More plans coming soon",
+          "Full Elite access during trial",
+          "Downgrade, upgrade, or cancel in Billing Portal",
+          "Secure subscription checkout powered by Stripe",
+          "No forced cancellation after trial",
         ].map((item) => (
           <div
             key={item}
@@ -60,7 +97,7 @@ export default function PricingPage() {
       </section>
 
       <div className="mt-14 flex justify-center">
-        <GlowButton href={STRIPE_LINK}>Start Now</GlowButton>
+        <GlowButton href={getCheckoutStartHref("pro")}>Start Pro Trial</GlowButton>
       </div>
     </div>
   );

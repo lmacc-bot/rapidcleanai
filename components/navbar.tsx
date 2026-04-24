@@ -7,7 +7,7 @@ import { GlowButton } from "@/components/glow-button";
 import { Logo } from "@/components/logo";
 import { Button } from "@/components/ui/button";
 import { publicNavItems } from "@/lib/site";
-import { STRIPE_LINK } from "@/lib/stripe";
+import { BILLING_ENTRY_HREF, MANAGE_BILLING_HREF } from "@/lib/stripe";
 import { cn } from "@/lib/utils";
 
 type LogoutAction = (formData: FormData) => void | Promise<void>;
@@ -52,7 +52,7 @@ export function Navbar(props: NavbarProps) {
                   <Link href="/login" className="transition hover:text-white">
                     Login
                   </Link>
-                  <GlowButton href={STRIPE_LINK} className="px-4 py-2.5">
+                  <GlowButton href={BILLING_ENTRY_HREF} className="px-4 py-2.5">
                     Start Now
                   </GlowButton>
                 </>
@@ -61,9 +61,9 @@ export function Navbar(props: NavbarProps) {
                   <Link href="/dashboard" className="transition hover:text-white">
                     Dashboard
                   </Link>
-                  <a href={STRIPE_LINK} className="transition hover:text-white" rel="noreferrer">
+                  <Link href={MANAGE_BILLING_HREF} className="transition hover:text-white">
                     Billing
-                  </a>
+                  </Link>
                   <a href="#account" className="transition hover:text-white">
                     Account
                   </a>
@@ -111,7 +111,7 @@ export function Navbar(props: NavbarProps) {
                     >
                       Login
                     </Link>
-                    <GlowButton href={STRIPE_LINK} className="w-full justify-center" onClick={() => setOpen(false)}>
+                    <GlowButton href={BILLING_ENTRY_HREF} className="w-full justify-center" onClick={() => setOpen(false)}>
                       Start Now
                     </GlowButton>
                   </>
@@ -124,14 +124,13 @@ export function Navbar(props: NavbarProps) {
                     >
                       Dashboard
                     </Link>
-                    <a
-                      href={STRIPE_LINK}
+                    <Link
+                      href={MANAGE_BILLING_HREF}
                       className="rounded-2xl px-3 py-2 transition hover:bg-white/5 hover:text-white"
                       onClick={() => setOpen(false)}
-                      rel="noreferrer"
                     >
                       Billing
-                    </a>
+                    </Link>
                     <a
                       href="#account"
                       className="rounded-2xl px-3 py-2 transition hover:bg-white/5 hover:text-white"

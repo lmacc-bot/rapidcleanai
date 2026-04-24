@@ -1,5 +1,6 @@
 import "server-only";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
+import { DEFAULT_BILLING_PLAN, normalizeBillingPlan, type BillingPlanId } from "@/lib/stripe";
 
 type BillingAccessRow = {
   has_access: boolean | null;
@@ -16,6 +17,7 @@ export type BillingAccessStatus = {
 type CreatePendingBillingAccessInput = {
   userId: string;
   email: string;
+  plan?: BillingPlanId;
 };
 
 type CreatePendingBillingAccessResult =
@@ -78,12 +80,13 @@ export async function createPendingBillingAccess(
 ): Promise<CreatePendingBillingAccessResult> {
   try {
     const supabase = createAdminSupabaseClient();
+    const selectedPlan = normalizeBillingPlan(input.plan ?? DEFAULT_BILLING_PLAN);
     const { error } = await supabase.from("billing_access").upsert(
       {
         user_id: input.userId,
         email: input.email,
         has_access: false,
-        plan: "pro",
+        plan: selectedPlan,
         payment_status: "pending",
       },
       {

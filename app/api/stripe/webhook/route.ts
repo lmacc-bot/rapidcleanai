@@ -1,7 +1,15 @@
 import type Stripe from "stripe";
 import { NextResponse } from "next/server";
-import { createStripeServerClient, getStripeWebhookSecret } from "@/lib/stripe-server";
-import { maskEmailForLogs, updateBillingAccessByEmail } from "@/lib/stripe-billing";
+import {
+  createStripeServerClient,
+  getStripeWebhookSecret,
+} from "@/lib/stripe-server";
+import {
+  getBillingSnapshotFromSubscription,
+  getBillingSnapshotFromSubscriptionId,
+  maskEmailForLogs,
+  syncBillingAccessByEmail,
+} from "@/lib/stripe-billing";
 
 export const runtime = "nodejs";
 
@@ -31,30 +39,19 @@ function jsonResponse(body: Record<string, unknown>, status = 200, extraHeaders?
   });
 }
 
-function normalizeNullableEmail(email: string | null | undefined) {
-  if (typeof email !== "string") {
-    return null;
+async function applyBillingSnapshot(
+  snapshot:
+    | Awaited<ReturnType<typeof getBillingSnapshotFromSubscription>>
+    | Awaited<ReturnType<typeof getBillingSnapshotFromSubscriptionId>>,
+  eventType: string,
+  eventId: string,
+) {
+  if (!snapshot?.email) {
+    console.warn(`[stripe webhook] Missing billing email for ${eventType} (${eventId}).`);
+    return jsonResponse({ received: true });
   }
 
-  const normalizedEmail = email.trim().toLowerCase();
-  return normalizedEmail.length > 0 ? normalizedEmail : null;
-}
-
-function getCheckoutSessionEmail(session: Stripe.Checkout.Session) {
-  return normalizeNullableEmail(session.customer_details?.email ?? session.customer_email);
-}
-
-function getInvoiceEmail(invoice: Stripe.Invoice) {
-  return normalizeNullableEmail(invoice.customer_email);
-}
-
-async function unlockAccessByEmail(email: string, eventType: string, eventId: string) {
-  const updateResult = await updateBillingAccessByEmail({
-    email,
-    paymentStatus: "active",
-    hasAccess: true,
-    plan: "pro",
-  });
+  const updateResult = await syncBillingAccessByEmail(snapshot);
 
   if (!updateResult.success) {
     if (updateResult.message === "Invalid billing email.") {
@@ -64,13 +61,13 @@ async function unlockAccessByEmail(email: string, eventType: string, eventId: st
       return jsonResponse({ received: true });
     }
 
-    console.error(`[stripe webhook] Failed to update billing access for ${eventType}:`, updateResult.message);
+    console.error(`[stripe webhook] Failed to sync billing access for ${eventType}:`, updateResult.message);
     return jsonResponse({ error: "Unable to process billing update." }, 500);
   }
 
   if (!updateResult.updated) {
     console.warn(
-      `[stripe webhook] No billing_access row found for ${maskEmailForLogs(email)} on ${eventType} (${eventId}).`,
+      `[stripe webhook] No billing_access row found for ${maskEmailForLogs(snapshot.email)} on ${eventType} (${eventId}).`,
     );
   }
 
@@ -129,25 +126,55 @@ export async function POST(request: Request) {
     case "checkout.session.completed":
     case "checkout.session.async_payment_succeeded": {
       const session = event.data.object as Stripe.Checkout.Session;
-      const email = getCheckoutSessionEmail(session);
+      const subscriptionId =
+        typeof session.subscription === "string" ? session.subscription : session.subscription?.id ?? null;
 
-      if (!email) {
-        console.warn(`[stripe webhook] Missing checkout email for ${event.type} (${event.id}).`);
+      if (!subscriptionId) {
+        console.warn(`[stripe webhook] Missing subscription id for ${event.type} (${event.id}).`);
         return jsonResponse({ received: true });
       }
 
-      return unlockAccessByEmail(email, event.type, event.id);
+      try {
+        const snapshot = await getBillingSnapshotFromSubscriptionId(subscriptionId);
+        return applyBillingSnapshot(snapshot, event.type, event.id);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Unknown checkout sync error";
+        console.error("[stripe webhook] Failed to sync checkout subscription:", message);
+        return jsonResponse({ error: "Unable to process checkout completion." }, 500);
+      }
     }
     case "invoice.paid": {
       const invoice = event.data.object as Stripe.Invoice;
-      const email = getInvoiceEmail(invoice);
+      const subscriptionId =
+        typeof invoice.parent?.subscription_details?.subscription === "string"
+          ? invoice.parent.subscription_details.subscription
+          : invoice.parent?.subscription_details?.subscription?.id ?? null;
 
-      if (!email) {
-        console.warn(`[stripe webhook] Missing invoice email for ${event.type} (${event.id}).`);
+      if (!subscriptionId) {
         return jsonResponse({ received: true });
       }
 
-      return unlockAccessByEmail(email, event.type, event.id);
+      try {
+        const snapshot = await getBillingSnapshotFromSubscriptionId(subscriptionId);
+        return applyBillingSnapshot(snapshot, event.type, event.id);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Unknown invoice sync error";
+        console.error("[stripe webhook] Failed to sync invoice payment:", message);
+        return jsonResponse({ error: "Unable to process invoice payment." }, 500);
+      }
+    }
+    case "customer.subscription.updated":
+    case "customer.subscription.deleted": {
+      const subscription = event.data.object as Stripe.Subscription;
+
+      try {
+        const snapshot = await getBillingSnapshotFromSubscription(subscription);
+        return applyBillingSnapshot(snapshot, event.type, event.id);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Unknown subscription sync error";
+        console.error("[stripe webhook] Failed to sync subscription update:", message);
+        return jsonResponse({ error: "Unable to process subscription update." }, 500);
+      }
     }
     default:
       return jsonResponse({ received: true });

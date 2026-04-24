@@ -2,6 +2,11 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect, unstable_rethrow } from "next/navigation";
+import {
+  DEFAULT_BILLING_PLAN,
+  isBillingPlanId,
+  normalizeBillingPlan,
+} from "@/lib/stripe";
 import { createPendingBillingAccess } from "@/lib/supabase/access";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
 import {
@@ -12,6 +17,14 @@ import {
 
 function withQuery(path: string, key: string, value: string) {
   return `${path}?${key}=${encodeURIComponent(value)}`;
+}
+
+function readSafeRedirect(value: FormDataEntryValue | null) {
+  if (typeof value !== "string" || !value.startsWith("/") || value.startsWith("//")) {
+    return null;
+  }
+
+  return value;
 }
 
 export async function signInAction(formData: FormData) {
@@ -40,10 +53,16 @@ export async function signInAction(formData: FormData) {
   }
 
   revalidatePath("/", "layout");
-  redirect("/dashboard");
+  const redirectTo = readSafeRedirect(formData.get("redirectTo"));
+  redirect(redirectTo ?? "/dashboard");
 }
 
 export async function signUpAction(formData: FormData) {
+  const selectedPlanValue = formData.get("selectedPlan");
+  const selectedPlan = normalizeBillingPlan(
+    isBillingPlanId(selectedPlanValue) ? selectedPlanValue : DEFAULT_BILLING_PLAN,
+  );
+
   const parsed = validateSignupInput({
     name: readFormField(formData, "name"),
     email: readFormField(formData, "email"),
@@ -87,6 +106,7 @@ export async function signUpAction(formData: FormData) {
     const billingAccess = await createPendingBillingAccess({
       userId,
       email: signupEmail,
+      plan: selectedPlan,
     });
 
     if (!billingAccess.success) {
