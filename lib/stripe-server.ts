@@ -7,6 +7,12 @@ import {
   type BillingPlanId,
 } from "@/lib/stripe";
 
+const STRIPE_PRICE_ENV_KEYS = {
+  starter: "STRIPE_STARTER_PRICE_ID",
+  pro: "STRIPE_PRO_PRICE_ID",
+  elite: "STRIPE_ELITE_PRICE_ID",
+} as const satisfies Record<BillingPlanId, string>;
+
 function getStripeSecretKey() {
   const secretKey = process.env.STRIPE_SECRET_KEY;
 
@@ -35,26 +41,39 @@ export function createStripeServerClient() {
   });
 }
 
-function getStripePlanPriceMap() {
-  const starter = process.env.STRIPE_STARTER_PRICE_ID;
-  const pro = process.env.STRIPE_PRO_PRICE_ID;
-  const elite = process.env.STRIPE_ELITE_PRICE_ID;
+function readStripePriceId(plan: BillingPlanId) {
+  const value = process.env[STRIPE_PRICE_ENV_KEYS[plan]]?.trim();
+  return value && value.length > 0 ? value : null;
+}
 
-  if (!starter || !pro || !elite) {
+function getConfiguredStripePriceEntries() {
+  return (Object.keys(STRIPE_PRICE_ENV_KEYS) as BillingPlanId[])
+    .map((plan) => [plan, readStripePriceId(plan)] as const)
+    .filter((entry): entry is readonly [BillingPlanId, string] => entry[1] !== null);
+}
+
+export function getStripePriceEnvPresence() {
+  return {
+    starter: Boolean(readStripePriceId("starter")),
+    pro: Boolean(readStripePriceId("pro")),
+    elite: Boolean(readStripePriceId("elite")),
+  } satisfies Record<BillingPlanId, boolean>;
+}
+
+export function getStripePriceIdForPlan(plan: BillingPlanId) {
+  const priceId = readStripePriceId(plan);
+
+  if (!priceId) {
     throw new Error(
-      "Missing Stripe price IDs. Set STRIPE_STARTER_PRICE_ID, STRIPE_PRO_PRICE_ID, and STRIPE_ELITE_PRICE_ID.",
+      `Missing ${STRIPE_PRICE_ENV_KEYS[plan]}. Set this Stripe price ID before starting ${plan} checkout.`,
     );
   }
 
-  return {
-    starter,
-    pro,
-    elite,
-  } satisfies Record<BillingPlanId, string>;
+  return priceId;
 }
 
 export function getStripePriceId(plan: BillingPlanId) {
-  return getStripePlanPriceMap()[plan];
+  return getStripePriceIdForPlan(plan);
 }
 
 export function getPlanFromStripePriceId(priceId: string | null | undefined): BillingPlanId | null {
@@ -62,8 +81,9 @@ export function getPlanFromStripePriceId(priceId: string | null | undefined): Bi
     return null;
   }
 
-  const entries = Object.entries(getStripePlanPriceMap()) as [BillingPlanId, string][];
-  const match = entries.find(([, configuredPriceId]) => configuredPriceId === priceId);
+  const match = getConfiguredStripePriceEntries().find(
+    ([, configuredPriceId]) => configuredPriceId === priceId,
+  );
   return match?.[0] ?? null;
 }
 

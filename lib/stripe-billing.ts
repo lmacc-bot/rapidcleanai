@@ -50,11 +50,15 @@ type CreateCheckoutSessionInput = {
 type CreateCheckoutSessionResult =
   | {
       success: true;
+      id: string;
       url: string;
+      urlPresent: true;
     }
   | {
       success: false;
       message: string;
+      id?: string;
+      urlPresent?: boolean;
     };
 
 type CreateBillingPortalSessionResult =
@@ -323,6 +327,7 @@ export async function createCheckoutSessionForPlan(
       userId: input.userId,
       fullName: input.fullName,
     });
+    const priceId = getStripePriceId(input.plan);
 
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
@@ -333,7 +338,7 @@ export async function createCheckoutSessionForPlan(
       cancel_url: buildAppUrl("/checkout/cancel"),
       line_items: [
         {
-          price: getStripePriceId(input.plan),
+          price: priceId,
           quantity: 1,
         },
       ],
@@ -350,16 +355,30 @@ export async function createCheckoutSessionForPlan(
       },
     });
 
+    console.log("[checkout] Stripe checkout session created", {
+      sessionId: session.id,
+      urlPresent: Boolean(session.url),
+    });
+
     if (!session.url) {
+      console.error("[checkout] Stripe checkout session URL missing", {
+        sessionId: session.id,
+        urlPresent: false,
+      });
+
       return {
         success: false,
         message: "Stripe did not return a checkout URL.",
+        id: session.id,
+        urlPresent: false,
       };
     }
 
     return {
       success: true,
+      id: session.id,
       url: session.url,
+      urlPresent: true,
     };
   } catch (error) {
     return {
