@@ -1,6 +1,17 @@
 import "server-only";
 import { createClient } from "@supabase/supabase-js";
-import { getSupabaseEnv } from "@/lib/supabase/config";
+
+function getSupabaseUrl() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+
+  if (!url) {
+    throw new Error(
+      "Missing NEXT_PUBLIC_SUPABASE_URL. Server-side billing, usage, and history checks require the Supabase project URL.",
+    );
+  }
+
+  return url;
+}
 
 function getServiceRoleKey() {
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -15,13 +26,23 @@ function getServiceRoleKey() {
 }
 
 export function createAdminSupabaseClient() {
-  const { url } = getSupabaseEnv();
+  const url = getSupabaseUrl();
+  const serviceRoleKey = getServiceRoleKey();
 
-  return createClient(url, getServiceRoleKey(), {
+  return createClient(url, serviceRoleKey, {
+    db: {
+      schema: "public",
+    },
     auth: {
       autoRefreshToken: false,
       detectSessionInUrl: false,
       persistSession: false,
+    },
+    global: {
+      headers: {
+        apikey: serviceRoleKey,
+        Authorization: `Bearer ${serviceRoleKey}`,
+      },
     },
   });
 }
