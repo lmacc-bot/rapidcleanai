@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { isMockQuoteResponse, type MockQuoteResponse } from "@/lib/mock-quote";
 import {
   isQuoteApiErrorPayload,
@@ -8,10 +9,11 @@ import {
   type QuoteUsageSummary,
   type SavedQuoteSummary,
 } from "@/lib/quote-limits";
-import { isBillingPlanId } from "@/lib/stripe";
+import { isBillingPlanId, MANAGE_BILLING_HREF } from "@/lib/stripe";
 import { validateChatPromptInput } from "@/lib/validation";
 import { ChatPanel, type ChatMessage } from "@/components/chat-panel";
 import { ResultsPanel } from "@/components/results-panel";
+import { Button } from "@/components/ui/button";
 
 const initialMessage: ChatMessage = {
   id: "welcome",
@@ -130,6 +132,91 @@ function applyUsageError(current: QuoteUsageSummary, payload: QuoteApiErrorPaylo
   };
 }
 
+function getLimitModalUsage(payload: QuoteApiErrorPayload, usage: QuoteUsageSummary) {
+  return {
+    used: payload.used ?? usage.quotesUsed,
+    limit: payload.limit ?? usage.quoteLimit,
+  };
+}
+
+function shouldShowQuoteLimitModal(status: number, payload: QuoteApiErrorPayload) {
+  return (
+    payload.feature === "daily_quotes" &&
+    (status === 429 || payload.code === "plan_limit_reached")
+  );
+}
+
+function QuoteLimitModal({
+  payload,
+  usage,
+  onClose,
+}: {
+  payload: QuoteApiErrorPayload;
+  usage: QuoteUsageSummary;
+  onClose: () => void;
+}) {
+  const { used, limit } = getLimitModalUsage(payload, usage);
+  const isStarter = payload.plan === "starter" || usage.selectedPlan === "starter";
+  const usageLabel = typeof limit === "number" ? `${used}/${limit}` : `${used}/unlimited`;
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-brand-bg/80 px-4 py-8 backdrop-blur-md"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="quote-limit-title"
+    >
+      <div className="w-full max-w-lg rounded-3xl border border-white/12 bg-brand-surface p-6 shadow-[0_24px_90px_rgba(0,0,0,0.46)]">
+        <div className="rounded-3xl border border-brand-neon/20 bg-brand-neon/10 p-4">
+          <p className="text-xs uppercase tracking-[0.18em] text-brand-neon">Upgrade recommended</p>
+          <h2 id="quote-limit-title" className="mt-3 font-display text-3xl font-semibold text-white">
+            You&apos;ve reached your quote limit
+          </h2>
+        </div>
+
+        <div className="mt-5 space-y-4 text-sm leading-7 text-brand-text">
+          {usage.isTrialing ? (
+            <p className="rounded-2xl border border-brand-cyan/20 bg-brand-cyan/10 px-4 py-3 font-medium text-white">
+              Your full-access trial is ending soon.
+            </p>
+          ) : null}
+
+          <p>
+            You&rsquo;ve generated {usageLabel} quotes in your 24-hour window. Upgrade now to keep
+            generating quotes and close more jobs faster.
+          </p>
+
+          {isStarter ? (
+            <div className="rounded-2xl border border-brand-neon/25 bg-white/5 px-4 py-3">
+              <p className="text-xs uppercase tracking-[0.18em] text-brand-neon">Recommended</p>
+              <p className="mt-1 font-medium text-white">
+                Pro is recommended for Starter teams that need more quote capacity and fewer
+                interruptions.
+              </p>
+            </div>
+          ) : null}
+
+          <p className="text-brand-muted">
+            Most users upgrade to Pro to avoid interruptions during busy days.
+          </p>
+        </div>
+
+        <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-end">
+          <Link
+            href={MANAGE_BILLING_HREF}
+            className="inline-flex h-11 items-center justify-center rounded-xl bg-brand-neon px-5 text-sm font-semibold text-brand-bg shadow-glow transition hover:-translate-y-0.5"
+          >
+            Upgrade to Pro
+          </Link>
+          <Button variant="secondary" type="button" onClick={onClose}>
+            Not now
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function DashboardShell({
   initialUsage,
   initialRecentQuotes,
@@ -146,6 +233,7 @@ export function DashboardShell({
   const [usage, setUsage] = useState(initialUsage);
   const [recentQuotes, setRecentQuotes] = useState(initialRecentQuotes);
   const [apiLimitError, setApiLimitError] = useState<QuoteApiErrorPayload | null>(null);
+  const [quoteLimitModalError, setQuoteLimitModalError] = useState<QuoteApiErrorPayload | null>(null);
   const [exporting, setExporting] = useState(false);
 
   async function submitPrompt(value: string) {
@@ -161,6 +249,7 @@ export function DashboardShell({
     setCopied(false);
     setErrorMessage(null);
     setApiLimitError(null);
+    setQuoteLimitModalError(null);
     setPrompt("");
     setMessages((current) => [
       ...current,
@@ -192,6 +281,20 @@ export function DashboardShell({
         if (parsedApiError) {
           setApiLimitError(parsedApiError);
           setUsage((current) => applyUsageError(current, parsedApiError));
+
+          if (shouldShowQuoteLimitModal(response.status, parsedApiError)) {
+            setQuoteLimitModalError(parsedApiError);
+            setResult(null);
+            setMessages((current) => [
+              ...current,
+              {
+                id: `assistant-limit-${Date.now()}`,
+                role: "assistant",
+                content: "You have reached your quote limit. Upgrade in Billing to keep generating quotes.",
+              },
+            ]);
+            return;
+          }
         }
 
         throw new Error(getApiErrorMessage(payload));
@@ -292,6 +395,7 @@ export function DashboardShell({
     setResult(null);
     setCopied(false);
     setErrorMessage(null);
+    setQuoteLimitModalError(null);
   }
 
   function handleClear() {
@@ -299,34 +403,45 @@ export function DashboardShell({
     setResult(null);
     setCopied(false);
     setErrorMessage(null);
+    setQuoteLimitModalError(null);
     setMessages([initialMessage]);
   }
 
   return (
-    <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
-      <ChatPanel
-        prompt={prompt}
-        onPromptChange={setPrompt}
-        onSubmit={submitPrompt}
-        messages={messages}
-        samplePrompts={samplePrompts}
-        loading={loading}
-        usage={usage}
-      />
-      <ResultsPanel
-        result={result}
-        loading={loading}
-        copied={copied}
-        errorMessage={errorMessage}
-        usage={usage}
-        recentQuotes={recentQuotes}
-        apiLimitError={apiLimitError}
-        exporting={exporting}
-        onNewQuote={handleNewQuote}
-        onCopy={handleCopy}
-        onClear={handleClear}
-        onExport={handleExport}
-      />
-    </div>
+    <>
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+        <ChatPanel
+          prompt={prompt}
+          onPromptChange={setPrompt}
+          onSubmit={submitPrompt}
+          messages={messages}
+          samplePrompts={samplePrompts}
+          loading={loading}
+          usage={usage}
+        />
+        <ResultsPanel
+          result={result}
+          loading={loading}
+          copied={copied}
+          errorMessage={errorMessage}
+          usage={usage}
+          recentQuotes={recentQuotes}
+          apiLimitError={apiLimitError}
+          exporting={exporting}
+          onNewQuote={handleNewQuote}
+          onCopy={handleCopy}
+          onClear={handleClear}
+          onExport={handleExport}
+        />
+      </div>
+
+      {quoteLimitModalError ? (
+        <QuoteLimitModal
+          payload={quoteLimitModalError}
+          usage={usage}
+          onClose={() => setQuoteLimitModalError(null)}
+        />
+      ) : null}
+    </>
   );
 }

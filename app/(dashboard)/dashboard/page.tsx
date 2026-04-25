@@ -14,6 +14,7 @@ import {
   getBillingPlanLabel,
   MANAGE_BILLING_HREF,
 } from "@/lib/stripe";
+import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
   title: "Dashboard",
@@ -59,6 +60,28 @@ function formatSavedQuoteCapacity(visible: number, limit: number | null) {
   return limit === null ? `${visible} saved` : `${visible} / ${limit}`;
 }
 
+function getTrialDaysRemainingFromTrialEnd(trialEndsAt: string | null) {
+  if (!trialEndsAt) {
+    return null;
+  }
+
+  const trialEndDate = new Date(trialEndsAt);
+
+  if (Number.isNaN(trialEndDate.getTime())) {
+    return null;
+  }
+
+  return Math.max(Math.ceil((trialEndDate.getTime() - Date.now()) / 86_400_000), 0);
+}
+
+function formatTrialDaysRemaining(days: number | null) {
+  if (typeof days !== "number") {
+    return "your trial is active.";
+  }
+
+  return `${days} day${days === 1 ? "" : "s"} remaining.`;
+}
+
 export default async function DashboardPage() {
   let supabase: Awaited<ReturnType<typeof getServerUser>>["supabase"] | null = null;
   let user: Awaited<ReturnType<typeof getServerUser>>["user"] = null;
@@ -97,13 +120,35 @@ export default async function DashboardPage() {
     (typeof user.user_metadata.full_name === "string" ? user.user_metadata.full_name : null) ||
     user.email?.split("@")[0] ||
     "there";
-  const isTrialing = stripeSummary?.isTrialing ?? access.paymentStatus === "trialing";
+  const isTrialing = access.paymentStatus === "trialing";
   const selectedPlan = stripeSummary?.plan ?? quoteWorkspace.usage.selectedPlan;
   const effectiveAccessLabel = isTrialing ? "Elite Trial" : formatPlan(selectedPlan);
-  const trialDaysRemaining = stripeSummary?.trialDaysRemaining;
+  const trialDaysRemaining =
+    getTrialDaysRemainingFromTrialEnd(stripeSummary?.trialEndsAt ?? null) ??
+    stripeSummary?.trialDaysRemaining ??
+    null;
+  const trialIsEndingSoon = typeof trialDaysRemaining === "number" && trialDaysRemaining <= 3;
 
   return (
     <div className="space-y-8">
+      {isTrialing ? (
+        <div
+          className={cn(
+            "rounded-3xl border px-5 py-4",
+            trialIsEndingSoon
+              ? "border-amber-400/25 bg-amber-400/10 text-amber-50"
+              : "border-brand-neon/20 bg-brand-neon/10 text-white",
+          )}
+        >
+          <p className="text-sm font-semibold">
+            You are on a full-access trial. {formatTrialDaysRemaining(trialDaysRemaining)}
+          </p>
+          {trialIsEndingSoon ? (
+            <p className="mt-1 text-sm text-amber-100">Choose a plan to avoid losing access.</p>
+          ) : null}
+        </div>
+      ) : null}
+
       <section className="grid gap-5 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
         <Card className="surface-gradient premium-border">
           <CardContent className="p-7">

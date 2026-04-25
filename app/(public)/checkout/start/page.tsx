@@ -39,6 +39,7 @@ export default async function CheckoutStartPage({ searchParams }: CheckoutStartP
     fullName:
       typeof user.user_metadata.full_name === "string" ? user.user_metadata.full_name : undefined,
     plan: selectedPlan,
+    allowTrial: access.paymentStatus !== "no_trial",
   });
 
   if (!checkoutSession.success) {

@@ -102,3 +102,16 @@ create policy "Users can view own saved quotes"
 on public.saved_quotes
 for select
 using (auth.uid() = user_id);
+
+create table if not exists public.trial_tracking (
+  id bigint generated always as identity primary key,
+  email text not null,
+  ip_address text not null,
+  user_agent text,
+  created_at timestamptz not null default timezone('utc'::text, now())
+);
+
+create index if not exists trial_tracking_ip_created_at_idx
+on public.trial_tracking (ip_address, created_at desc);
+
+alter table public.trial_tracking enable row level security;

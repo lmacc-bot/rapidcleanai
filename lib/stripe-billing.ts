@@ -44,6 +44,7 @@ type CreateCheckoutSessionInput = {
   userId: string;
   fullName?: string | null;
   plan: BillingPlanId;
+  allowTrial?: boolean;
 };
 
 type CreateCheckoutSessionResult =
@@ -341,7 +342,7 @@ export async function createCheckoutSessionForPlan(
         supabase_user_id: input.userId,
       },
       subscription_data: {
-        trial_period_days: TRIAL_PERIOD_DAYS,
+        trial_period_days: input.allowTrial === false ? undefined : TRIAL_PERIOD_DAYS,
         metadata: {
           selected_plan: input.plan,
           supabase_user_id: input.userId,

@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
 import { redirect, unstable_rethrow } from "next/navigation";
 import {
   DEFAULT_BILLING_PLAN,
@@ -9,6 +10,7 @@ import {
 } from "@/lib/stripe";
 import { createPendingBillingAccess } from "@/lib/supabase/access";
 import { createServerSupabaseClient } from "@/lib/supabase/server";
+import { trackTrialSignup } from "@/lib/supabase/trial-tracking";
 import {
   readFormField,
   validateLoginInput,
@@ -25,6 +27,15 @@ function readSafeRedirect(value: FormDataEntryValue | null) {
   }
 
   return value;
+}
+
+function readClientIp(headerStore: Awaited<ReturnType<typeof headers>>) {
+  const forwardedFor = headerStore.get("x-forwarded-for");
+  const realIp = headerStore.get("x-real-ip");
+  const vercelForwardedFor = headerStore.get("x-vercel-forwarded-for");
+  const candidate = forwardedFor ?? vercelForwardedFor ?? realIp;
+
+  return candidate?.split(",")[0]?.trim() || null;
 }
 
 export async function signInAction(formData: FormData) {
@@ -103,10 +114,22 @@ export async function signUpAction(formData: FormData) {
       redirect(withQuery("/signup", "error", "signup_failed"));
     }
 
+    const headerStore = await headers();
+    const trialTracking = await trackTrialSignup({
+      email: signupEmail,
+      ipAddress: readClientIp(headerStore),
+      userAgent: headerStore.get("user-agent"),
+    });
+
+    if (!trialTracking.success) {
+      console.error("[trial_tracking] Failed to track signup trial eligibility:", trialTracking.message);
+    }
+
     const billingAccess = await createPendingBillingAccess({
       userId,
       email: signupEmail,
       plan: selectedPlan,
+      paymentStatus: trialTracking.trialEligible ? "pending" : "no_trial",
     });
 
     if (!billingAccess.success) {

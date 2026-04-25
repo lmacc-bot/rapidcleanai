@@ -18,6 +18,7 @@ type CreatePendingBillingAccessInput = {
   userId: string;
   email: string;
   plan?: BillingPlanId;
+  paymentStatus?: "pending" | "no_trial";
 };
 
 type CreatePendingBillingAccessResult =
@@ -87,7 +88,7 @@ export async function createPendingBillingAccess(
         email: input.email,
         has_access: false,
         plan: selectedPlan,
-        payment_status: "pending",
+        payment_status: input.paymentStatus ?? "pending",
       },
       {
         onConflict: "user_id",
