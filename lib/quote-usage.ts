@@ -64,7 +64,8 @@ type QuoteWorkspaceSnapshotOptions = {
   onReadFailure?: "default" | "throw";
 };
 
-type AdminSupabaseClient = ReturnType<typeof createAdminSupabaseClient>;
+// Each function creates its own admin Supabase client when accessing
+// quote_usage_windows or saved_quotes rather than receiving a client as a parameter.
 
 function normalizeNullableCount(count: number | null) {
   return typeof count === "number" && Number.isFinite(count) && count >= 0 ? count : 0;
@@ -81,10 +82,6 @@ function normalizeIsoDate(value: string | null | undefined, fallback: string) {
 
 function getNowIso() {
   return new Date().toISOString();
-}
-
-function createQuoteUsageAdminClient() {
-  return createAdminSupabaseClient();
 }
 
 function buildDefaultUsageWindow(nowIso = getNowIso()) {
@@ -139,10 +136,8 @@ function buildEmptySavedCounts() {
   };
 }
 
-async function getActiveUsageWindow(
-  userId: string,
-  supabase: AdminSupabaseClient = createQuoteUsageAdminClient(),
-) {
+async function getActiveUsageWindow(userId: string) {
+  const supabase = createAdminSupabaseClient();
   const nowIso = getNowIso();
   const { data, error } = await supabase
     .from("quote_usage_windows")
@@ -214,8 +209,8 @@ async function getSavedQuoteCounts(
   userId: string,
   historyDays: number | null,
   savedQuoteLimit: number | null,
-  supabase: AdminSupabaseClient = createQuoteUsageAdminClient(),
 ) {
+  const supabase = createAdminSupabaseClient();
   const historyCutoffIso = getHistoryCutoffIso(historyDays);
   let countQuery = supabase
     .from("saved_quotes")
@@ -325,8 +320,8 @@ async function listSavedQuoteRows(
   userId: string,
   usage: QuoteUsageSummary,
   limit: number | null,
-  supabase: AdminSupabaseClient = createQuoteUsageAdminClient(),
 ): Promise<SavedQuoteRow[]> {
+  const supabase = createAdminSupabaseClient();
   const historyCutoffIso = getHistoryCutoffIso(usage.historyDays);
   let query = supabase
     .from("saved_quotes")
@@ -380,6 +375,19 @@ export async function getQuoteWorkspaceSnapshot(userId: string): Promise<{
   });
 }
 
+export async function getQuoteUsage(userId: string): Promise<QuoteUsageSummary> {
+  const plan = await resolveEffectiveQuotePlan(userId);
+  const planLimits = getBillingPlanLimits(plan.effectivePlan);
+  const usageWindow = await getActiveUsageWindow(userId);
+  const savedCounts = await getSavedQuoteCounts(
+    userId,
+    planLimits.historyDays,
+    planLimits.savedQuotes,
+  );
+
+  return buildQuoteUsageSummary(plan, usageWindow, savedCounts);
+}
+
 async function getQuoteWorkspaceSnapshotWithOptions(
   userId: string,
   options: QuoteWorkspaceSnapshotOptions,
@@ -389,22 +397,20 @@ async function getQuoteWorkspaceSnapshotWithOptions(
 }> {
   const plan = await resolveEffectiveQuotePlan(userId);
   const planLimits = getBillingPlanLimits(plan.effectivePlan);
-  const supabase = createQuoteUsageAdminClient();
 
   try {
-    const usageWindow = await getActiveUsageWindow(userId, supabase);
+    const usageWindow = await getActiveUsageWindow(userId);
     const savedCounts = await getSavedQuoteCounts(
       userId,
       planLimits.historyDays,
       planLimits.savedQuotes,
-      supabase,
     );
     const usage = buildQuoteUsageSummary(plan, usageWindow, savedCounts);
     const recentLimit =
       usage.savedQuotesLimit === null
         ? RECENT_SAVED_QUOTES_DISPLAY_LIMIT
         : Math.min(usage.savedQuotesLimit, RECENT_SAVED_QUOTES_DISPLAY_LIMIT);
-    const recentQuoteRows = await listSavedQuoteRows(userId, usage, recentLimit, supabase);
+    const recentQuoteRows = await listSavedQuoteRows(userId, usage, recentLimit);
 
     return {
       usage,
@@ -428,9 +434,8 @@ async function getQuoteWorkspaceSnapshotWithOptions(
 }
 
 export async function checkQuoteGenerationAllowance(userId: string): Promise<QuoteGenerationAllowance> {
-  const supabase = createQuoteUsageAdminClient();
   const plan = await resolveEffectiveQuotePlan(userId);
-  const usageWindow = await getActiveUsageWindow(userId, supabase);
+  const usageWindow = await getActiveUsageWindow(userId);
   const usage = buildQuoteUsageSummary(plan, usageWindow, buildEmptySavedCounts());
 
   if (usage.quoteLimit !== null && usage.quotesRemaining !== null && usage.quotesRemaining <= 0) {
@@ -461,8 +466,8 @@ export async function recordGeneratedQuote(input: {
   quote: MockQuoteResponse;
   plan: EffectiveQuotePlan;
 }): Promise<QuoteUsageSummary> {
-  const supabase = createQuoteUsageAdminClient();
-  const activeWindow = await getActiveUsageWindow(input.userId, supabase);
+  const supabase = createAdminSupabaseClient();
+  const activeWindow = await getActiveUsageWindow(input.userId);
   const nextQuotesUsed = activeWindow.quotesUsed + 1;
   const nowIso = getNowIso();
 
@@ -506,7 +511,6 @@ export async function recordGeneratedQuote(input: {
       input.userId,
       planLimits.historyDays,
       planLimits.savedQuotes,
-      supabase,
     );
   } catch (error) {
     logQuoteUsageFailure("Failed to refresh saved quote counts after generation.", error);
