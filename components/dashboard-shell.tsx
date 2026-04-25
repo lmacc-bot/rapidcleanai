@@ -146,6 +146,21 @@ function shouldShowQuoteLimitModal(status: number, payload: QuoteApiErrorPayload
   );
 }
 
+function buildLocalQuoteLimitError(usage: QuoteUsageSummary): QuoteApiErrorPayload {
+  return {
+    error: "You have reached your quote limit.",
+    code: "plan_limit_reached",
+    feature: "daily_quotes",
+    plan: usage.selectedPlan,
+    limit: usage.quoteLimit,
+    used: usage.quotesUsed,
+    remaining: usage.quotesRemaining,
+    resetsAt: usage.resetsAt,
+    upgradeHref: MANAGE_BILLING_HREF,
+    upgradePlan: usage.selectedPlan === "starter" ? "pro" : null,
+  };
+}
+
 function QuoteLimitModal({
   payload,
   usage,
@@ -170,7 +185,7 @@ function QuoteLimitModal({
         <div className="rounded-3xl border border-brand-neon/20 bg-brand-neon/10 p-4">
           <p className="text-xs uppercase tracking-[0.18em] text-brand-neon">Upgrade recommended</p>
           <h2 id="quote-limit-title" className="mt-3 font-display text-3xl font-semibold text-white">
-            You&apos;ve reached your quote limit
+            You&rsquo;ve reached your quote limit
           </h2>
         </div>
 
@@ -407,6 +422,14 @@ export function DashboardShell({
     setMessages([initialMessage]);
   }
 
+  function handleLimitReached() {
+    const limitError = buildLocalQuoteLimitError(usage);
+    setApiLimitError(limitError);
+    setQuoteLimitModalError(limitError);
+    setErrorMessage(null);
+    setResult(null);
+  }
+
   return (
     <>
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
@@ -414,6 +437,7 @@ export function DashboardShell({
           prompt={prompt}
           onPromptChange={setPrompt}
           onSubmit={submitPrompt}
+          onLimitReached={handleLimitReached}
           messages={messages}
           samplePrompts={samplePrompts}
           loading={loading}

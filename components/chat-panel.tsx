@@ -21,6 +21,7 @@ type ChatPanelProps = {
   prompt: string;
   onPromptChange: (value: string) => void;
   onSubmit: (value: string) => Promise<void> | void;
+  onLimitReached: () => void;
   messages: ChatMessage[];
   samplePrompts: string[];
   loading: boolean;
@@ -50,17 +51,25 @@ export function ChatPanel({
   prompt,
   onPromptChange,
   onSubmit,
+  onLimitReached,
   messages,
   samplePrompts,
   loading,
   usage,
 }: ChatPanelProps) {
+  const limitReached = usage.quoteLimit !== null && usage.quotesRemaining !== null && usage.quotesRemaining <= 0;
+
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+
+    if (limitReached) {
+      onLimitReached();
+      return;
+    }
+
     void onSubmit(prompt);
   }
 
-  const limitReached = usage.quoteLimit !== null && usage.quotesRemaining !== null && usage.quotesRemaining <= 0;
   const resetTime = formatResetTime(usage.resetsAt);
   const usageLabel =
     usage.quoteLimit === null
@@ -158,7 +167,7 @@ export function ChatPanel({
             type="submit"
             size="lg"
             className="w-full sm:w-auto"
-            disabled={loading || !prompt.trim() || limitReached}
+            disabled={loading || !prompt.trim()}
           >
             {loading ? "Generating..." : "Send"}
             <SendHorizontal className="size-4" />
