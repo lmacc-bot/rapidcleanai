@@ -74,12 +74,16 @@ function getTrialDaysRemainingFromTrialEnd(trialEndsAt: string | null) {
   return Math.max(Math.ceil((trialEndDate.getTime() - Date.now()) / 86_400_000), 0);
 }
 
+function formatTrialDayCount(days: number) {
+  return `${days} day${days === 1 ? "" : "s"}`;
+}
+
 function formatTrialDaysRemaining(days: number | null) {
   if (typeof days !== "number") {
-    return "your trial is active.";
+    return "Trial timing is syncing from Stripe.";
   }
 
-  return `${days} day${days === 1 ? "" : "s"} remaining.`;
+  return `${formatTrialDayCount(days)} remaining.`;
 }
 
 export default async function DashboardPage() {
@@ -134,18 +138,33 @@ export default async function DashboardPage() {
       {isTrialing ? (
         <div
           className={cn(
-            "rounded-3xl border px-5 py-4",
+            "flex flex-col gap-4 rounded-3xl border px-5 py-4 sm:flex-row sm:items-center sm:justify-between",
             trialIsEndingSoon
               ? "border-amber-400/25 bg-amber-400/10 text-amber-50"
               : "border-brand-neon/20 bg-brand-neon/10 text-white",
           )}
         >
-          <p className="text-sm font-semibold">
-            You are on a full-access trial. {formatTrialDaysRemaining(trialDaysRemaining)}
-          </p>
-          {trialIsEndingSoon ? (
-            <p className="mt-1 text-sm text-amber-100">Choose a plan to avoid losing access.</p>
-          ) : null}
+          <div>
+            <p className="text-sm font-semibold">
+              {trialIsEndingSoon && typeof trialDaysRemaining === "number"
+                ? `Your full-access trial ends in ${formatTrialDayCount(
+                    trialDaysRemaining,
+                  )}. Choose a plan to avoid losing access.`
+                : `You are on a full-access Elite trial. ${formatTrialDaysRemaining(
+                    trialDaysRemaining,
+                  )}`}
+            </p>
+            {!trialIsEndingSoon ? (
+              <p className="mt-1 text-sm text-brand-text">
+                Pick your plan before the trial ends to keep quote generation moving.
+              </p>
+            ) : null}
+          </div>
+          <div className="shrink-0">
+            <GlowButton href={MANAGE_BILLING_HREF} variant="secondary" trailingIcon={false}>
+              Manage Plan
+            </GlowButton>
+          </div>
         </div>
       ) : null}
 
