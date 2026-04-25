@@ -7,7 +7,7 @@ function getServiceRoleKey() {
 
   if (!serviceRoleKey) {
     throw new Error(
-      "Missing SUPABASE_SERVICE_ROLE_KEY. Server-side billing access checks require the Supabase service role key.",
+      "Missing SUPABASE_SERVICE_ROLE_KEY. Server-side billing, usage, and history checks require the Supabase service role key.",
     );
   }
 

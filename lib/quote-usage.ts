@@ -60,6 +60,10 @@ type ExportableQuote = {
   quote: MockQuoteResponse;
 };
 
+type QuoteWorkspaceSnapshotOptions = {
+  onReadFailure?: "default" | "throw";
+};
+
 function normalizeNullableCount(count: number | null) {
   return typeof count === "number" && Number.isFinite(count) && count >= 0 ? count : 0;
 }
@@ -75,6 +79,25 @@ function normalizeIsoDate(value: string | null | undefined, fallback: string) {
 
 function getNowIso() {
   return new Date().toISOString();
+}
+
+function buildDefaultUsageWindow(nowIso = getNowIso()) {
+  return {
+    quotesUsed: 0,
+    windowStartedAt: nowIso,
+    resetsAt: getResetIso(nowIso),
+  };
+}
+
+function logQuoteUsageFailure(context: string, error: unknown) {
+  const detail =
+    error instanceof Error
+      ? `${error.name}: ${error.message}`
+      : typeof error === "string"
+        ? error
+        : "Unknown error";
+
+  console.error(`[quote usage] ${context}`, detail);
 }
 
 function getResetIso(windowStartedAt: string) {
@@ -333,25 +356,59 @@ export async function getQuoteWorkspaceSnapshot(userId: string): Promise<{
   usage: QuoteUsageSummary;
   recentQuotes: SavedQuoteSummary[];
 }> {
-  const plan = await resolveEffectiveQuotePlan(userId);
-  const usageWindow = await getActiveUsageWindow(userId);
-  const planLimits = getBillingPlanLimits(plan.effectivePlan);
-  const savedCounts = await getSavedQuoteCounts(userId, planLimits.historyDays, planLimits.savedQuotes);
-  const usage = buildQuoteUsageSummary(plan, usageWindow, savedCounts);
-  const recentLimit =
-    usage.savedQuotesLimit === null
-      ? RECENT_SAVED_QUOTES_DISPLAY_LIMIT
-      : Math.min(usage.savedQuotesLimit, RECENT_SAVED_QUOTES_DISPLAY_LIMIT);
-  const recentQuoteRows = await listSavedQuoteRows(userId, usage, recentLimit);
+  return getQuoteWorkspaceSnapshotWithOptions(userId, {
+    onReadFailure: "default",
+  });
+}
 
-  return {
-    usage,
-    recentQuotes: recentQuoteRows.map(mapSavedQuoteRow).filter((quote): quote is SavedQuoteSummary => quote !== null),
-  };
+async function getQuoteWorkspaceSnapshotWithOptions(
+  userId: string,
+  options: QuoteWorkspaceSnapshotOptions,
+): Promise<{
+  usage: QuoteUsageSummary;
+  recentQuotes: SavedQuoteSummary[];
+}> {
+  const plan = await resolveEffectiveQuotePlan(userId);
+  const planLimits = getBillingPlanLimits(plan.effectivePlan);
+
+  try {
+    const usageWindow = await getActiveUsageWindow(userId);
+    const savedCounts = await getSavedQuoteCounts(userId, planLimits.historyDays, planLimits.savedQuotes);
+    const usage = buildQuoteUsageSummary(plan, usageWindow, savedCounts);
+    const recentLimit =
+      usage.savedQuotesLimit === null
+        ? RECENT_SAVED_QUOTES_DISPLAY_LIMIT
+        : Math.min(usage.savedQuotesLimit, RECENT_SAVED_QUOTES_DISPLAY_LIMIT);
+    const recentQuoteRows = await listSavedQuoteRows(userId, usage, recentLimit);
+
+    return {
+      usage,
+      recentQuotes: recentQuoteRows
+        .map(mapSavedQuoteRow)
+        .filter((quote): quote is SavedQuoteSummary => quote !== null),
+    };
+  } catch (error) {
+    if (options.onReadFailure === "throw") {
+      throw error;
+    }
+
+    logQuoteUsageFailure("Falling back to default dashboard quote usage snapshot.", error);
+    const usage = buildQuoteUsageSummary(plan, buildDefaultUsageWindow(), {
+      visible: 0,
+      hidden: 0,
+    });
+
+    return {
+      usage,
+      recentQuotes: [],
+    };
+  }
 }
 
 export async function checkQuoteGenerationAllowance(userId: string): Promise<QuoteGenerationAllowance> {
-  const snapshot = await getQuoteWorkspaceSnapshot(userId);
+  const snapshot = await getQuoteWorkspaceSnapshotWithOptions(userId, {
+    onReadFailure: "throw",
+  });
 
   if (snapshot.usage.quoteLimit !== null && snapshot.usage.quotesRemaining !== null && snapshot.usage.quotesRemaining <= 0) {
     const plan = await resolveEffectiveQuotePlan(userId);
@@ -438,7 +495,9 @@ export async function getExportableQuotes(userId: string): Promise<
       error: QuoteApiErrorPayload;
     }
 > {
-  const snapshot = await getQuoteWorkspaceSnapshot(userId);
+  const snapshot = await getQuoteWorkspaceSnapshotWithOptions(userId, {
+    onReadFailure: "throw",
+  });
 
   if (!snapshot.usage.exportEnabled) {
     return {
