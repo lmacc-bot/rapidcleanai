@@ -8,3 +8,19 @@ export function T({ k }: { k: TranslationKey }) {
 
   return <>{t(k)}</>;
 }
+
+export function TFormat({
+  k,
+  values,
+}: {
+  k: TranslationKey;
+  values: Record<string, string | number>;
+}) {
+  const t = useT();
+  const text = Object.entries(values).reduce(
+    (current, [key, value]) => current.replace(`{${key}}`, String(value)),
+    t(k),
+  );
+
+  return <>{text}</>;
+}

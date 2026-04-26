@@ -2,9 +2,10 @@
 
 import type { FormEvent } from "react";
 import { MessageSquareText, SendHorizontal, Sparkles } from "lucide-react";
-import { useT } from "@/components/language-provider";
+import { useLanguage } from "@/components/language-provider";
 import type { QuoteUsageSummary } from "@/lib/quote-limits";
-import { formatBillingAiSpeed, getBillingPlanLabel } from "@/lib/stripe";
+import { getBillingPlanLabel, type BillingAiSpeed } from "@/lib/stripe";
+import type { Language, TranslationKey } from "@/lib/translations";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -29,7 +30,13 @@ type ChatPanelProps = {
   usage: QuoteUsageSummary;
 };
 
-function formatResetTime(isoString: string | null) {
+const aiSpeedTranslationKeys = {
+  slower: "ai_speed_slower",
+  fast: "ai_speed_fast",
+  fastest: "ai_speed_fastest",
+} satisfies Record<BillingAiSpeed, TranslationKey>;
+
+function formatResetTime(isoString: string | null, language: Language) {
   if (!isoString) {
     return null;
   }
@@ -40,7 +47,7 @@ function formatResetTime(isoString: string | null) {
     return null;
   }
 
-  return date.toLocaleString("en-US", {
+  return date.toLocaleString(language === "es" ? "es-US" : "en-US", {
     month: "short",
     day: "numeric",
     hour: "numeric",
@@ -58,7 +65,7 @@ export function ChatPanel({
   loading,
   usage,
 }: ChatPanelProps) {
-  const t = useT();
+  const { language, t } = useLanguage();
   const limitReached = usage.quoteLimit !== null && usage.quotesRemaining !== null && usage.quotesRemaining <= 0;
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -72,11 +79,19 @@ export function ChatPanel({
     void onSubmit(prompt);
   }
 
-  const resetTime = formatResetTime(usage.resetsAt);
+  const resetTime = formatResetTime(usage.resetsAt, language);
   const usageLabel =
     usage.quoteLimit === null
-      ? `${getBillingPlanLabel(usage.effectivePlan)} access includes unlimited quote sessions.`
-      : `${usage.quotesRemaining ?? 0} of ${usage.quoteLimit} quotes remaining in this 24-hour window.`;
+      ? t("chat_unlimited_sessions").replace("{plan}", getBillingPlanLabel(usage.effectivePlan))
+      : t("chat_quotes_remaining")
+          .replace("{remaining}", String(usage.quotesRemaining ?? 0))
+          .replace("{limit}", String(usage.quoteLimit));
+  const resetLabel = resetTime
+    ? t("chat_reset_at").replace("{time}", resetTime)
+    : t("chat_reset_auto");
+  const aiSpeedLabel = t("chat_ai_speed_reset")
+    .replace("{speed}", t(aiSpeedTranslationKeys[usage.aiSpeed]))
+    .replace("{reset}", resetLabel);
 
   return (
     <Card className="surface-gradient premium-border h-full">
@@ -97,15 +112,13 @@ export function ChatPanel({
         <div className="rounded-3xl border border-white/10 bg-[rgba(11,15,20,0.62)] px-4 py-3 text-sm text-brand-text">
           <p className="font-medium text-white">
             {usage.isTrialing
-              ? "Elite trial active: unlimited quotes, full history, and fastest mock responses."
+              ? t("chat_elite_trial_active")
               : usageLabel}
           </p>
           <p className="mt-1 text-brand-muted">
             {usage.isTrialing
-              ? "Your trial keeps the dashboard at Elite-level access until Stripe switches you to your selected plan."
-              : `AI speed: ${formatBillingAiSpeed(usage.aiSpeed)}. Reset ${
-                  resetTime ? `at ${resetTime}` : "automatically every 24 hours"
-                }.`}
+              ? t("chat_trial_keeps_elite")
+              : aiSpeedLabel}
           </p>
         </div>
       </CardHeader>
@@ -127,7 +140,7 @@ export function ChatPanel({
                 )}
               >
                 <div className="mb-1 text-[11px] uppercase tracking-[0.18em] text-brand-muted">
-                  {message.role === "assistant" ? "RapidCleanAI" : "You"}
+                  {message.role === "assistant" ? "RapidCleanAI" : t("chat_you")}
                 </div>
                 <p>{message.content}</p>
               </div>

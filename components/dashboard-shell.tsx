@@ -15,12 +15,7 @@ import { ChatPanel, type ChatMessage } from "@/components/chat-panel";
 import { useLanguage, useT } from "@/components/language-provider";
 import { ResultsPanel } from "@/components/results-panel";
 import { Button } from "@/components/ui/button";
-
-const samplePrompts = [
-  "Weekly office clean for 4,000 sq ft, 3 restrooms, 2 break rooms, quote needed this week.",
-  "Move-out clean for a 2 bed / 2 bath apartment with inside oven and fridge.",
-  "Deep clean for 2,100 sq ft home with pet hair, interior windows, and rush scheduling.",
-];
+import type { TranslationKey } from "@/lib/translations";
 
 function buildInitialMessage(content: string): ChatMessage {
   return {
@@ -30,27 +25,29 @@ function buildInitialMessage(content: string): ChatMessage {
   };
 }
 
-function buildCopyPayload(result: MockQuoteResponse) {
+type Translator = (key: TranslationKey) => string;
+
+function buildCopyPayload(result: MockQuoteResponse, t: Translator) {
   return [
-    `RapidCleanAI Quote`,
-    `Request ID: ${result.requestId}`,
-    `Recommended: $${result.recommendedEstimate.recommended}`,
-    `Range: $${result.recommendedEstimate.low}-$${result.recommendedEstimate.high}`,
+    t("copy_quote_title"),
+    `${t("copy_request_id")}: ${result.requestId}`,
+    `${t("copy_recommended")}: $${result.recommendedEstimate.recommended}`,
+    `${t("copy_range")}: $${result.recommendedEstimate.low}-$${result.recommendedEstimate.high}`,
     ``,
-    `Summary`,
+    t("copy_summary"),
     result.summary,
     ``,
-    `Customer Message`,
+    t("copy_customer_message"),
     result.customerMessage,
   ].join("\n");
 }
 
-function getApiErrorMessage(payload: unknown) {
+function getApiErrorMessage(payload: unknown, t: Translator) {
   if (isQuoteApiErrorPayload(payload)) {
     return payload.error;
   }
 
-  return "Unable to generate a quote right now.";
+  return t("results_generate_failed");
 }
 
 function readNullableNumberHeader(value: string | null) {
@@ -148,9 +145,9 @@ function shouldShowQuoteLimitModal(status: number, payload: QuoteApiErrorPayload
   );
 }
 
-function buildLocalQuoteLimitError(usage: QuoteUsageSummary): QuoteApiErrorPayload {
+function buildLocalQuoteLimitError(usage: QuoteUsageSummary, t: Translator): QuoteApiErrorPayload {
   return {
-    error: "You have reached your quote limit.",
+    error: t("dashboard_quote_limit_error"),
     code: "plan_limit_reached",
     feature: "daily_quotes",
     plan: usage.selectedPlan,
@@ -187,7 +184,7 @@ function QuoteLimitModal({
     >
       <div className="w-full max-w-lg rounded-3xl border border-white/12 bg-brand-surface p-6 shadow-[0_24px_90px_rgba(0,0,0,0.46)]">
         <div className="rounded-3xl border border-brand-neon/20 bg-brand-neon/10 p-4">
-          <p className="text-xs uppercase tracking-[0.18em] text-brand-neon">Upgrade recommended</p>
+          <p className="text-xs uppercase tracking-[0.18em] text-brand-neon">{t("upgrade_modal_heading")}</p>
           <h2 id="quote-limit-title" className="mt-3 font-display text-3xl font-semibold text-white">
             {t("upgrade_modal_title")}
           </h2>
@@ -196,7 +193,7 @@ function QuoteLimitModal({
         <div className="mt-5 space-y-4 text-sm leading-7 text-brand-text">
           {usage.isTrialing ? (
             <p className="rounded-2xl border border-brand-cyan/20 bg-brand-cyan/10 px-4 py-3 font-medium text-white">
-              Your full-access trial is ending soon.
+              {t("upgrade_modal_trial_ending")}
             </p>
           ) : null}
 
@@ -255,6 +252,11 @@ export function DashboardShell({
   const [apiLimitError, setApiLimitError] = useState<QuoteApiErrorPayload | null>(null);
   const [quoteLimitModalError, setQuoteLimitModalError] = useState<QuoteApiErrorPayload | null>(null);
   const [exporting, setExporting] = useState(false);
+  const samplePrompts = [
+    t("chat_sample_prompt_office"),
+    t("chat_sample_prompt_moveout"),
+    t("chat_sample_prompt_deep"),
+  ];
 
   useEffect(() => {
     setMessages((current) =>
@@ -325,11 +327,11 @@ export function DashboardShell({
           }
         }
 
-        throw new Error(getApiErrorMessage(payload));
+        throw new Error(getApiErrorMessage(payload, t));
       }
 
       if (!isMockQuoteResponse(payload)) {
-        throw new Error("The quote response was invalid. Please try again.");
+        throw new Error(t("results_invalid_response"));
       }
 
       const nextUsage = getUsageFromHeaders(response.headers, usage);
@@ -341,12 +343,15 @@ export function DashboardShell({
         {
           id: `assistant-${Date.now()}`,
           role: "assistant",
-          content: `Mock quote ready. Recommended estimate: $${payload.recommendedEstimate.recommended}.`,
+          content: t("results_mock_ready").replace(
+            "{amount}",
+            String(payload.recommendedEstimate.recommended),
+          ),
         },
       ]);
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : "The mock quote endpoint did not respond.";
+        error instanceof Error ? error.message : t("results_endpoint_failed");
       setResult(null);
       setErrorMessage(message);
       setMessages((current) => [
@@ -382,7 +387,7 @@ export function DashboardShell({
           setApiLimitError(parsedApiError);
         }
 
-        throw new Error(getApiErrorMessage(payload));
+        throw new Error(getApiErrorMessage(payload, t));
       }
 
       const blob = await response.blob();
@@ -398,7 +403,7 @@ export function DashboardShell({
       URL.revokeObjectURL(objectUrl);
     } catch (error) {
       setErrorMessage(
-        error instanceof Error ? error.message : "Unable to export quotes right now.",
+        error instanceof Error ? error.message : t("results_export_failed"),
       );
     } finally {
       setExporting(false);
@@ -411,7 +416,7 @@ export function DashboardShell({
     }
 
     try {
-      await navigator.clipboard.writeText(buildCopyPayload(result));
+      await navigator.clipboard.writeText(buildCopyPayload(result, t));
       setCopied(true);
     } catch {
       setCopied(false);
@@ -436,7 +441,7 @@ export function DashboardShell({
   }
 
   function handleLimitReached() {
-    const limitError = buildLocalQuoteLimitError(usage);
+    const limitError = buildLocalQuoteLimitError(usage, t);
     setApiLimitError(limitError);
     setQuoteLimitModalError(limitError);
     setErrorMessage(null);

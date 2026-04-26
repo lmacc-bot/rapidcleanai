@@ -4,11 +4,12 @@ import type { MockQuoteResponse } from "@/lib/mock-quote";
 import type { QuoteApiErrorPayload, QuoteUsageSummary, SavedQuoteSummary } from "@/lib/quote-limits";
 import { Copy, Download, FilePlus2, RotateCcw, ShieldCheck, Sparkles } from "lucide-react";
 import { GlowButton } from "@/components/glow-button";
-import { useT } from "@/components/language-provider";
+import { useLanguage } from "@/components/language-provider";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { getBillingPlanLabel, MANAGE_BILLING_HREF } from "@/lib/stripe";
+import type { Language, TranslationKey } from "@/lib/translations";
 
 type ResultsPanelProps = {
   result: MockQuoteResponse | null;
@@ -31,24 +32,38 @@ const money = new Intl.NumberFormat("en-US", {
   maximumFractionDigits: 0,
 });
 
-function formatHistoryWindow(historyDays: number | null) {
-  return historyDays === null ? "Unlimited history" : `${historyDays}-day history`;
+type Translator = (key: TranslationKey) => string;
+
+function fillTemplate(template: string, values: Record<string, string | number>) {
+  return Object.entries(values).reduce(
+    (current, [key, value]) => current.replace(`{${key}}`, String(value)),
+    template,
+  );
 }
 
-function formatSavedQuotesLimit(usage: QuoteUsageSummary) {
+function formatHistoryWindow(historyDays: number | null, t: Translator) {
+  return historyDays === null
+    ? t("results_unlimited_history")
+    : fillTemplate(t("results_day_history"), { days: historyDays });
+}
+
+function formatSavedQuotesLimit(usage: QuoteUsageSummary, t: Translator) {
   return usage.savedQuotesLimit === null
-    ? `${usage.savedQuotesVisible} saved quotes`
-    : `${usage.savedQuotesVisible} of ${usage.savedQuotesLimit} visible`;
+    ? fillTemplate(t("results_saved_quotes_count"), { count: usage.savedQuotesVisible })
+    : fillTemplate(t("results_saved_quotes_visible"), {
+        visible: usage.savedQuotesVisible,
+        limit: usage.savedQuotesLimit,
+      });
 }
 
-function formatSavedQuoteDate(isoString: string) {
+function formatSavedQuoteDate(isoString: string, language: Language, t: Translator) {
   const date = new Date(isoString);
 
   if (Number.isNaN(date.getTime())) {
-    return "Saved recently";
+    return t("results_saved_recently");
   }
 
-  return date.toLocaleString("en-US", {
+  return date.toLocaleString(language === "es" ? "es-US" : "en-US", {
     month: "short",
     day: "numeric",
     hour: "numeric",
@@ -56,39 +71,49 @@ function formatSavedQuoteDate(isoString: string) {
   });
 }
 
-function getUpgradePrompt(usage: QuoteUsageSummary, apiLimitError: QuoteApiErrorPayload | null) {
+function getUpgradePrompt(
+  usage: QuoteUsageSummary,
+  apiLimitError: QuoteApiErrorPayload | null,
+  t: Translator,
+) {
   if (apiLimitError?.upgradeHref) {
     return {
       title: apiLimitError.error,
       description:
         apiLimitError.feature === "daily_quotes"
-          ? "Upgrade in Billing to increase your quote capacity without waiting for the next 24-hour reset."
-          : "Open Billing to unlock more capability on your current account.",
+          ? t("results_upgrade_daily")
+          : t("results_upgrade_capability"),
       href: apiLimitError.upgradeHref,
       cta:
         apiLimitError.upgradePlan !== null
-          ? `Upgrade to ${getBillingPlanLabel(apiLimitError.upgradePlan)}`
-          : "Manage Billing",
+          ? fillTemplate(t("results_upgrade_to"), {
+              plan: getBillingPlanLabel(apiLimitError.upgradePlan),
+            })
+          : t("results_manage_billing"),
     };
   }
 
   if (usage.hiddenSavedQuotes > 0 && usage.savedQuotesLimit !== null) {
     return {
-      title: `${getBillingPlanLabel(usage.selectedPlan)} currently shows your newest ${usage.savedQuotesLimit} saved quotes.`,
-      description: `Upgrade in Billing to unlock ${usage.hiddenSavedQuotes} additional saved quote${
-        usage.hiddenSavedQuotes === 1 ? "" : "s"
-      } and keep a longer retained quote library.`,
+      title: fillTemplate(t("results_hidden_saved_title"), {
+        plan: getBillingPlanLabel(usage.selectedPlan),
+        limit: usage.savedQuotesLimit,
+      }),
+      description: fillTemplate(t("results_hidden_saved_description"), {
+        count: usage.hiddenSavedQuotes,
+        plural: usage.hiddenSavedQuotes === 1 ? "" : "s",
+      }),
       href: MANAGE_BILLING_HREF,
-      cta: "Upgrade Billing",
+      cta: t("results_upgrade_billing"),
     };
   }
 
   if (!usage.exportEnabled) {
     return {
-      title: "Export is locked on Starter.",
-      description: "Upgrade to Pro or Elite in Billing to export saved quotes for handoff, review, or archiving.",
+      title: t("results_unlock_export_title"),
+      description: t("results_unlock_export_description"),
       href: MANAGE_BILLING_HREF,
-      cta: "Unlock Export",
+      cta: t("results_unlock_export_cta"),
     };
   }
 
@@ -109,8 +134,8 @@ export function ResultsPanel({
   onClear,
   onExport,
 }: ResultsPanelProps) {
-  const t = useT();
-  const upgradePrompt = getUpgradePrompt(usage, apiLimitError);
+  const { language, t } = useLanguage();
+  const upgradePrompt = getUpgradePrompt(usage, apiLimitError, t);
 
   return (
     <Card className="surface-gradient premium-border h-full">
@@ -152,28 +177,35 @@ export function ResultsPanel({
       <CardContent className="space-y-5">
         <div className="grid gap-4 rounded-3xl border border-white/10 bg-[rgba(11,15,20,0.62)] p-4 sm:grid-cols-3">
           <div>
-            <p className="text-xs uppercase tracking-[0.16em] text-brand-muted">Quotes</p>
+            <p className="text-xs uppercase tracking-[0.16em] text-brand-muted">{t("results_quotes_label")}</p>
             <p className="mt-2 text-white">
               {usage.quoteLimit === null
-                ? "Unlimited"
-                : `${usage.quotesUsed} used / ${usage.quoteLimit}`}
+                ? t("results_unlimited")
+                : fillTemplate(t("results_used_of_limit"), {
+                    used: usage.quotesUsed,
+                    limit: usage.quoteLimit,
+                  })}
             </p>
             <p className="mt-1 text-xs text-brand-muted">
               {usage.quoteLimit === null
-                ? "Trial and Elite accounts stay open-ended."
-                : `${usage.quotesRemaining ?? 0} remaining before the next reset.`}
+                ? t("results_trial_unlimited")
+                : fillTemplate(t("results_remaining_before_reset"), {
+                    remaining: usage.quotesRemaining ?? 0,
+                  })}
             </p>
           </div>
           <div>
-            <p className="text-xs uppercase tracking-[0.16em] text-brand-muted">Saved Quotes</p>
-            <p className="mt-2 text-white">{formatSavedQuotesLimit(usage)}</p>
-            <p className="mt-1 text-xs text-brand-muted">{formatHistoryWindow(usage.historyDays)}</p>
+            <p className="text-xs uppercase tracking-[0.16em] text-brand-muted">{t("results_saved_quotes_label")}</p>
+            <p className="mt-2 text-white">{formatSavedQuotesLimit(usage, t)}</p>
+            <p className="mt-1 text-xs text-brand-muted">{formatHistoryWindow(usage.historyDays, t)}</p>
           </div>
           <div>
-            <p className="text-xs uppercase tracking-[0.16em] text-brand-muted">Export</p>
-            <p className="mt-2 text-white">{usage.exportEnabled ? "Enabled" : "Upgrade Required"}</p>
+            <p className="text-xs uppercase tracking-[0.16em] text-brand-muted">{t("results_export_label")}</p>
+            <p className="mt-2 text-white">
+              {usage.exportEnabled ? t("results_enabled") : t("results_upgrade_required")}
+            </p>
             <p className="mt-1 text-xs text-brand-muted">
-              {usage.templatesEnabled ? "Templates included on this plan." : "Templates unlock on Elite."}
+              {usage.templatesEnabled ? t("results_templates_included") : t("results_templates_elite")}
             </p>
           </div>
         </div>
@@ -230,7 +262,7 @@ export function ResultsPanel({
                   {money.format(result.recommendedEstimate.recommended)}
                 </div>
                 <p className="mt-3 text-sm text-brand-text/90">
-                  Suggested range {money.format(result.recommendedEstimate.low)} -{" "}
+                  {t("results_suggested_range")} {money.format(result.recommendedEstimate.low)} -{" "}
                   {money.format(result.recommendedEstimate.high)}
                 </p>
               </div>
@@ -239,7 +271,7 @@ export function ResultsPanel({
                 <p className="mt-3 text-sm leading-7 text-brand-text">{result.marginNote}</p>
                 <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/6 px-3 py-1.5 text-xs uppercase tracking-[0.18em] text-brand-muted">
                   <ShieldCheck className="size-3.5 text-brand-neon" />
-                  Phase 1 protected dashboard
+                  {t("results_protected_dashboard")}
                 </div>
               </div>
             </div>
@@ -293,7 +325,7 @@ export function ResultsPanel({
                 {t("results_saved_history_description")}
               </p>
             </div>
-            <Badge variant="secondary">{formatHistoryWindow(usage.historyDays)}</Badge>
+            <Badge variant="secondary">{formatHistoryWindow(usage.historyDays, t)}</Badge>
           </div>
 
           {recentQuotes.length ? (
@@ -306,7 +338,7 @@ export function ResultsPanel({
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <p className="text-sm font-medium text-white">{money.format(quote.recommendedEstimate)}</p>
                     <p className="text-xs uppercase tracking-[0.16em] text-brand-muted">
-                      {formatSavedQuoteDate(quote.createdAt)}
+                      {formatSavedQuoteDate(quote.createdAt, language, t)}
                     </p>
                   </div>
                   <p className="mt-2 text-sm leading-7 text-brand-muted">{quote.prompt}</p>

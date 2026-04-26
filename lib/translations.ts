@@ -31,21 +31,53 @@ export const translations = {
     home_example_range: "Range: $245 - $335",
     home_example_margin: "Margin note: Avoid discounting until the scope is confirmed.",
     home_example_customer: "Customer message: Clean, ready-to-send language in one click.",
+    home_mvp_stub: "MVP stub",
     home_problem_eyebrow: "Problem",
     home_problem_title: "Most cleaning quotes are slow, inconsistent, and margin-draining.",
     home_problem_description:
       "RapidCleanAI keeps the Phase 1 promise simple: reply faster, price with more confidence, and clean up the workflow.",
+    home_problem_1_title: "Slow quote turnaround loses leads",
+    home_problem_1_description:
+      "When quote replies take too long, home and commercial prospects keep shopping and your pipeline cools off fast.",
+    home_problem_2_title: "Guesswork kills margin",
+    home_problem_2_description:
+      "Underpricing to win the job may close deals today, but it quietly drains profit and strains your team tomorrow.",
+    home_problem_3_title: "Every response feels custom",
+    home_problem_3_description:
+      "Owners and admins waste hours rewriting the same pricing explanations, follow-ups, and customer messages from scratch.",
     home_solution_eyebrow: "Solution",
     home_solution_title: "A faster quoting workflow without heavy setup.",
     home_solution_description:
       "This MVP skips the complicated stuff and focuses on the core actions that help you launch and collect revenue now.",
+    home_solution_1_title: "Price with cleaner guardrails",
+    home_solution_1_description:
+      "RapidCleanAI gives you structured quote guidance so you can move quickly without racing to the bottom.",
+    home_solution_2_title: "Reply in minutes, not hours",
+    home_solution_2_description:
+      "Use guided prompts and customer-ready messaging to send polished responses faster while leads are still hot.",
+    home_solution_3_title: "Keep the work inside one dashboard",
+    home_solution_3_description:
+      "Your quoting workspace stays simple: prompt on the left, results on the right, ready on desktop and mobile.",
     home_steps_eyebrow: "How It Works",
     home_steps_title: "From lead request to polished quote in 3 simple steps.",
     home_steps_description: "Keep the workflow focused so your team can start using it right away.",
+    home_step_1_title: "Describe the job",
+    home_step_1_description:
+      "Drop in the client details, square footage, frequency, and scope notes you already collect.",
+    home_step_2_title: "Review suggested pricing",
+    home_step_2_description:
+      "RapidCleanAI returns a clean pricing range, margin notes, and clear assumptions for the quote.",
+    home_step_3_title: "Send a polished response",
+    home_step_3_description:
+      "Copy the customer-ready message, make quick edits if needed, and send with more confidence.",
     home_benefit_label: "Why it matters",
     home_benefit_title: "Simple enough to launch now",
     home_benefit_description:
       "Subscription checkout is ready, auth is protected, and the dashboard is already positioned for a real AI backend later.",
+    home_benefit_1: "Quote more jobs without adding admin hours",
+    home_benefit_2: "Protect margins with cleaner pricing discipline",
+    home_benefit_3: "Stay responsive on desktop, tablet, and mobile",
+    home_benefit_4: "Keep your MVP stack simple enough to launch now",
     home_monetization_label: "Monetization Ready",
     home_monetization_text: "Trial-first Stripe subscriptions are already wired.",
     home_access_label: "Protected Access",
@@ -54,6 +86,15 @@ export const translations = {
     home_testimonials_title: "What cleaning operators keep asking for.",
     home_testimonials_description:
       "These feedback themes reflect the quoting pain points owners describe most often during early conversations.",
+    home_testimonial_1_quote:
+      "We needed a faster way to answer quote requests without guessing and leaving money on the table.",
+    home_testimonial_1_role: "Residential cleaning owner",
+    home_testimonial_2_quote:
+      "The biggest win is clarity. A fast pricing range and a clean customer message save real back-and-forth.",
+    home_testimonial_2_role: "Commercial cleaning operator",
+    home_testimonial_3_quote:
+      "If my team can quote faster from a phone and keep margin discipline, that is instantly valuable.",
+    home_testimonial_3_role: "Multi-crew service manager",
     home_pricing_eyebrow: "Pricing",
     home_pricing_title: "Start with a full-access trial, then keep the plan that fits.",
     home_pricing_description:
@@ -62,6 +103,12 @@ export const translations = {
     home_pricing_card_cta: "Compare Plans",
     home_pricing_card_description:
       "Every new account starts with a 14-day full-access trial. After that, customers stay on the selected plan and can change it anytime in Billing Portal.",
+    pricing_feature_unlimited: "Unlimited quote sessions",
+    pricing_feature_guidance: "Smart pricing guidance",
+    pricing_feature_messages: "Customer-ready messages",
+    pricing_feature_assistant: "AI-powered quote assistant",
+    pricing_feature_dashboard: "Dashboard access",
+    pricing_feature_support: "Priority support",
     home_final_eyebrow: "Final CTA",
     home_final_title: "Launch a cleaner quoting workflow and start collecting revenue now.",
     home_final_description:
@@ -76,10 +123,18 @@ export const translations = {
     pricing_pro_description: "Best for cleaning businesses that quote jobs daily.",
     pricing_elite_label: "For power users",
     pricing_elite_description: "Maximum quoting power for high-volume teams.",
+    pricing_days: "days",
     pricing_trial_days: "full access trial",
     pricing_start_starter: "Start Starter Trial",
     pricing_start_pro: "Start Pro Trial",
     pricing_start_elite: "Start Elite Trial",
+    pricing_plan_highlight_trial: "14-day full-access trial starts at checkout",
+    pricing_starter_highlight_fit: "Good fit for solo operators and lean teams",
+    pricing_starter_highlight_change: "Change plans anytime in Stripe Billing Portal",
+    pricing_pro_highlight_fit: "Balanced option for growing cleaning businesses",
+    pricing_pro_highlight_change: "Downgrade, upgrade, or cancel without calling support",
+    pricing_elite_highlight_fit: "Best fit for teams that want the most headroom",
+    pricing_elite_highlight_change: "Keep full control through Stripe Billing Portal",
     pricing_full_trial: "Full Elite access during trial",
     pricing_change_plan: "Downgrade, upgrade, or cancel in Billing Portal",
     pricing_secure_checkout: "Secure subscription checkout powered by Stripe",
@@ -87,8 +142,18 @@ export const translations = {
     pricing_faq_eyebrow: "FAQ",
     pricing_faq_title: "Answers before you subscribe",
     pricing_faq_description: "Everything customers usually want to confirm before they buy.",
+    pricing_faq_1_question: "Can I downgrade later?",
+    pricing_faq_1_answer:
+      "Yes. Stripe Billing Portal lets you downgrade, upgrade, or cancel without having to contact support.",
+    pricing_faq_2_question: "What happens during the trial?",
+    pricing_faq_2_answer:
+      "Every new checkout starts with a 14-day full-access trial. After that, your selected plan becomes the billed subscription unless you change it.",
+    pricing_faq_3_question: "Does it work on mobile?",
+    pricing_faq_3_answer:
+      "Yes. The dashboard is built to work cleanly on phones, tablets, and desktop browsers.",
     dashboard_label: "Dashboard",
     dashboard_welcome: "Welcome back",
+    dashboard_fallback_name: "there",
     dashboard_intro:
       "This protected MVP workspace lets you test the quote experience now while keeping the AI layer safely stubbed.",
     dashboard_account: "Account",
@@ -104,6 +169,24 @@ export const translations = {
     dashboard_manage_billing: "Manage Billing",
     dashboard_trial_notice: "You are currently on a full-access trial. Choose your plan before the trial ends.",
     dashboard_trial_manage: "Use Billing to manage or change your plan anytime.",
+    dashboard_used: "used",
+    dashboard_saved_count: "{count} saved quotes",
+    dashboard_history_days: "{days} days",
+    dashboard_elite_trial: "Elite Trial",
+    dashboard_payment_pending: "Pending",
+    dashboard_payment_active: "Active",
+    dashboard_payment_trialing: "Trialing",
+    dashboard_payment_no_trial: "No trial",
+    dashboard_payment_past_due: "Past due",
+    dashboard_payment_incomplete: "Incomplete",
+    dashboard_payment_unpaid: "Unpaid",
+    dashboard_payment_canceled: "Canceled",
+    dashboard_payment_review: "Review needed",
+    ai_speed_slower: "Slower",
+    ai_speed_fast: "Fast",
+    ai_speed_fastest: "Fastest",
+    dashboard_billing_description:
+      "Stripe manages your subscription lifecycle now. Use Billing Portal to downgrade, upgrade, or cancel without interrupting the dashboard access flow.",
     trial_banner_default: "You're on a full-access trial.",
     trial_banner_ending: "Your trial ends in",
     trial_banner_choose: "Choose a plan to keep access.",
@@ -116,6 +199,12 @@ export const translations = {
     chat_mvp_assistant: "MVP Assistant",
     chat_recent_prompts: "Recent prompts",
     chat_sample_prompts: "Sample prompts",
+    chat_sample_prompt_office:
+      "Weekly office clean for 4,000 sq ft, 3 restrooms, 2 break rooms, quote needed this week.",
+    chat_sample_prompt_moveout:
+      "Move-out clean for a 2 bed / 2 bath apartment with inside oven and fridge.",
+    chat_sample_prompt_deep:
+      "Deep clean for 2,100 sq ft home with pet hair, interior windows, and rush scheduling.",
     chat_placeholder:
       "Example: Deep clean for a 3 bed / 2 bath home, 2,100 sq ft, pet hair, inside fridge requested, quote needed by tomorrow.",
     chat_send: "Send",
@@ -123,6 +212,15 @@ export const translations = {
     chat_limit_inline:
       "You have used every quote in the current 24-hour window. Upgrade in Billing or wait for the next reset to keep quoting.",
     chat_welcome: "Share the job details and I will generate a structured mock quote response for this MVP.",
+    chat_elite_trial_active: "Elite trial active: unlimited quotes, full history, and fastest mock responses.",
+    chat_trial_keeps_elite:
+      "Your trial keeps the dashboard at Elite-level access until Stripe switches you to your selected plan.",
+    chat_unlimited_sessions: "{plan} access includes unlimited quote sessions.",
+    chat_quotes_remaining: "{remaining} of {limit} quotes remaining in this 24-hour window.",
+    chat_ai_speed_reset: "AI speed: {speed}. Reset {reset}.",
+    chat_reset_at: "at {time}",
+    chat_reset_auto: "automatically every 24 hours",
+    chat_you: "You",
     results_panel: "Results Panel",
     results_title: "Quote output",
     results_description:
@@ -147,6 +245,50 @@ export const translations = {
     results_saved_history_description:
       "RapidCleanAI saves each generated quote server-side and applies your current plan history rules automatically.",
     results_no_saved: "Generated quotes will start appearing here as soon as you create them.",
+    results_quotes_label: "Quotes",
+    results_saved_quotes_label: "Saved Quotes",
+    results_export_label: "Export",
+    results_unlimited: "Unlimited",
+    results_used_of_limit: "{used} used / {limit}",
+    results_trial_unlimited: "Trial and Elite accounts stay open-ended.",
+    results_remaining_before_reset: "{remaining} remaining before the next reset.",
+    results_saved_quotes_count: "{count} saved quotes",
+    results_saved_quotes_visible: "{visible} of {limit} visible",
+    results_unlimited_history: "Unlimited history",
+    results_day_history: "{days}-day history",
+    results_enabled: "Enabled",
+    results_upgrade_required: "Upgrade Required",
+    results_templates_included: "Templates included on this plan.",
+    results_templates_elite: "Templates unlock on Elite.",
+    results_saved_recently: "Saved recently",
+    results_suggested_range: "Suggested range",
+    results_protected_dashboard: "Phase 1 protected dashboard",
+    results_upgrade_daily:
+      "Upgrade in Billing to increase your quote capacity without waiting for the next 24-hour reset.",
+    results_upgrade_capability: "Open Billing to unlock more capability on your current account.",
+    results_upgrade_to: "Upgrade to {plan}",
+    results_manage_billing: "Manage Billing",
+    results_hidden_saved_title:
+      "{plan} currently shows your newest {limit} saved quotes.",
+    results_hidden_saved_description:
+      "Upgrade in Billing to unlock {count} additional saved quote{plural} and keep a longer retained quote library.",
+    results_unlock_export_title: "Export is locked on Starter.",
+    results_unlock_export_description:
+      "Upgrade to Pro or Elite in Billing to export saved quotes for handoff, review, or archiving.",
+    results_unlock_export_cta: "Unlock Export",
+    results_upgrade_billing: "Upgrade Billing",
+    results_mock_ready: "Mock quote ready. Recommended estimate: ${amount}.",
+    results_invalid_response: "The quote response was invalid. Please try again.",
+    results_endpoint_failed: "The mock quote endpoint did not respond.",
+    results_generate_failed: "Unable to generate a quote right now.",
+    results_export_failed: "Unable to export quotes right now.",
+    dashboard_quote_limit_error: "You have reached your quote limit.",
+    copy_quote_title: "RapidCleanAI Quote",
+    copy_request_id: "Request ID",
+    copy_recommended: "Recommended",
+    copy_range: "Range",
+    copy_summary: "Summary",
+    copy_customer_message: "Customer Message",
     upgrade_modal_title: "You've reached your quote limit",
     upgrade_modal_body:
       "You've generated {usage} quotes in your 24-hour window. Upgrade now to keep generating quotes and close more jobs faster.",
@@ -154,6 +296,8 @@ export const translations = {
     upgrade_modal_cta: "Upgrade to Pro",
     upgrade_modal_secondary: "Not now",
     upgrade_modal_recommended: "Recommended",
+    upgrade_modal_heading: "Upgrade recommended",
+    upgrade_modal_trial_ending: "Your full-access trial is ending soon.",
     upgrade_modal_starter:
       "Pro is recommended for Starter teams that need more quote capacity and fewer interruptions.",
   },
@@ -187,21 +331,53 @@ export const translations = {
     home_example_range: "Rango: $245 - $335",
     home_example_margin: "Nota de margen: Evita descuentos hasta confirmar el alcance.",
     home_example_customer: "Mensaje al cliente: Texto listo para enviar en un clic.",
+    home_mvp_stub: "MVP simulado",
     home_problem_eyebrow: "Problema",
     home_problem_title: "Muchas cotizaciones de limpieza son lentas, inconsistentes y reducen margen.",
     home_problem_description:
       "RapidCleanAI mantiene la promesa de fase 1 simple: responder mas rapido, cotizar con mas confianza y ordenar el flujo de trabajo.",
+    home_problem_1_title: "Responder lento hace perder clientes",
+    home_problem_1_description:
+      "Cuando las cotizaciones tardan demasiado, clientes residenciales y comerciales siguen buscando y tu oportunidad se enfria rapido.",
+    home_problem_2_title: "Adivinar precios reduce margen",
+    home_problem_2_description:
+      "Bajar el precio para ganar puede cerrar trabajos hoy, pero reduce ganancias y presiona a tu equipo manana.",
+    home_problem_3_title: "Cada respuesta parece hecha desde cero",
+    home_problem_3_description:
+      "Duenos y administradores pierden horas reescribiendo explicaciones de precio, seguimientos y mensajes al cliente.",
     home_solution_eyebrow: "Solucion",
     home_solution_title: "Un flujo de cotizacion mas rapido sin configuracion pesada.",
     home_solution_description:
       "Este MVP evita lo complicado y se enfoca en las acciones principales para lanzar y cobrar ahora.",
+    home_solution_1_title: "Cotiza con mejores limites",
+    home_solution_1_description:
+      "RapidCleanAI te da guia estructurada para avanzar rapido sin competir solo por precio bajo.",
+    home_solution_2_title: "Responde en minutos, no horas",
+    home_solution_2_description:
+      "Usa prompts guiados y mensajes listos para enviar respuestas pulidas mientras el lead sigue caliente.",
+    home_solution_3_title: "Mantén el trabajo en un solo panel",
+    home_solution_3_description:
+      "Tu espacio de cotizacion sigue simple: prompt a la izquierda, resultados a la derecha, listo en escritorio y movil.",
     home_steps_eyebrow: "Como funciona",
     home_steps_title: "De solicitud a cotizacion pulida en 3 pasos simples.",
     home_steps_description: "Mantiene el flujo enfocado para que tu equipo pueda usarlo de inmediato.",
+    home_step_1_title: "Describe el trabajo",
+    home_step_1_description:
+      "Agrega detalles del cliente, pies cuadrados, frecuencia y notas de alcance que ya recopilas.",
+    home_step_2_title: "Revisa el precio sugerido",
+    home_step_2_description:
+      "RapidCleanAI devuelve un rango claro, notas de margen y supuestos para la cotizacion.",
+    home_step_3_title: "Envia una respuesta pulida",
+    home_step_3_description:
+      "Copia el mensaje listo para el cliente, edita rapido si hace falta y envia con mas confianza.",
     home_benefit_label: "Por que importa",
     home_benefit_title: "Simple para lanzar ahora",
     home_benefit_description:
       "El checkout de suscripcion esta listo, el acceso esta protegido y el panel queda preparado para IA real mas adelante.",
+    home_benefit_1: "Cotiza mas trabajos sin sumar horas administrativas",
+    home_benefit_2: "Protege margenes con disciplina de precios mas clara",
+    home_benefit_3: "Responde desde escritorio, tablet o movil",
+    home_benefit_4: "Mantén tu stack MVP simple para lanzar ahora",
     home_monetization_label: "Listo para cobrar",
     home_monetization_text: "Las suscripciones con prueba inicial ya estan conectadas.",
     home_access_label: "Acceso protegido",
@@ -210,6 +386,15 @@ export const translations = {
     home_testimonials_title: "Lo que los operadores de limpieza piden una y otra vez.",
     home_testimonials_description:
       "Estos temas reflejan los problemas de cotizacion que los duenos mencionan con mas frecuencia.",
+    home_testimonial_1_quote:
+      "Necesitabamos una forma mas rapida de responder solicitudes sin adivinar ni dejar dinero sobre la mesa.",
+    home_testimonial_1_role: "Dueno de limpieza residencial",
+    home_testimonial_2_quote:
+      "La mayor ventaja es claridad. Un rango rapido y un mensaje limpio ahorran mucho ida y vuelta.",
+    home_testimonial_2_role: "Operador de limpieza comercial",
+    home_testimonial_3_quote:
+      "Si mi equipo puede cotizar mas rapido desde el telefono y cuidar margen, eso tiene valor inmediato.",
+    home_testimonial_3_role: "Gerente de equipo de servicio",
     home_pricing_eyebrow: "Precios",
     home_pricing_title: "Empieza con prueba completa y luego conserva el plan que te conviene.",
     home_pricing_description:
@@ -218,6 +403,12 @@ export const translations = {
     home_pricing_card_cta: "Comparar planes",
     home_pricing_card_description:
       "Cada cuenta nueva empieza con una prueba completa de 14 dias. Despues, los clientes mantienen el plan elegido y pueden cambiarlo en Billing Portal.",
+    pricing_feature_unlimited: "Sesiones de cotizacion ilimitadas",
+    pricing_feature_guidance: "Guia inteligente de precios",
+    pricing_feature_messages: "Mensajes listos para el cliente",
+    pricing_feature_assistant: "Asistente de cotizacion con IA",
+    pricing_feature_dashboard: "Acceso al panel",
+    pricing_feature_support: "Soporte prioritario",
     home_final_eyebrow: "CTA final",
     home_final_title: "Lanza un flujo de cotizacion mas limpio y empieza a cobrar ahora.",
     home_final_description:
@@ -232,10 +423,18 @@ export const translations = {
     pricing_pro_description: "Ideal para negocios de limpieza que cotizan trabajos todos los dias.",
     pricing_elite_label: "Para usuarios avanzados",
     pricing_elite_description: "Maxima potencia de cotizacion para equipos de alto volumen.",
+    pricing_days: "dias",
     pricing_trial_days: "prueba con acceso completo",
     pricing_start_starter: "Empezar prueba Starter",
     pricing_start_pro: "Empezar prueba Pro",
     pricing_start_elite: "Empezar prueba Elite",
+    pricing_plan_highlight_trial: "Prueba de 14 dias con acceso completo desde checkout",
+    pricing_starter_highlight_fit: "Buena opcion para operadores solos y equipos pequenos",
+    pricing_starter_highlight_change: "Cambia de plan cuando quieras en Stripe Billing Portal",
+    pricing_pro_highlight_fit: "Opcion equilibrada para negocios de limpieza en crecimiento",
+    pricing_pro_highlight_change: "Baja, sube o cancela sin contactar soporte",
+    pricing_elite_highlight_fit: "Ideal para equipos que quieren mas capacidad",
+    pricing_elite_highlight_change: "Mantén control completo en Stripe Billing Portal",
     pricing_full_trial: "Acceso Elite completo durante la prueba",
     pricing_change_plan: "Baja, sube o cancela en Billing Portal",
     pricing_secure_checkout: "Checkout seguro con Stripe",
@@ -243,8 +442,18 @@ export const translations = {
     pricing_faq_eyebrow: "FAQ",
     pricing_faq_title: "Respuestas antes de suscribirte",
     pricing_faq_description: "Lo que los clientes suelen querer confirmar antes de comprar.",
+    pricing_faq_1_question: "Puedo bajar de plan despues?",
+    pricing_faq_1_answer:
+      "Si. Stripe Billing Portal te permite bajar, subir o cancelar sin contactar soporte.",
+    pricing_faq_2_question: "Que pasa durante la prueba?",
+    pricing_faq_2_answer:
+      "Cada checkout nuevo empieza con una prueba completa de 14 dias. Despues, tu plan seleccionado se convierte en la suscripcion facturada si no lo cambias.",
+    pricing_faq_3_question: "Funciona en movil?",
+    pricing_faq_3_answer:
+      "Si. El panel esta disenado para funcionar bien en telefono, tablet y navegador de escritorio.",
     dashboard_label: "Panel",
     dashboard_welcome: "Bienvenido de nuevo",
+    dashboard_fallback_name: "equipo",
     dashboard_intro:
       "Este espacio MVP protegido te permite probar la experiencia de cotizacion mientras la capa de IA sigue segura y simulada.",
     dashboard_account: "Cuenta",
@@ -260,6 +469,24 @@ export const translations = {
     dashboard_manage_billing: "Gestionar facturacion",
     dashboard_trial_notice: "Actualmente tienes una prueba con acceso completo. Elige tu plan antes de que termine.",
     dashboard_trial_manage: "Usa Facturacion para gestionar o cambiar tu plan cuando quieras.",
+    dashboard_used: "usadas",
+    dashboard_saved_count: "{count} cotizaciones guardadas",
+    dashboard_history_days: "{days} dias",
+    dashboard_elite_trial: "Prueba Elite",
+    dashboard_payment_pending: "Pendiente",
+    dashboard_payment_active: "Activo",
+    dashboard_payment_trialing: "En prueba",
+    dashboard_payment_no_trial: "Sin prueba",
+    dashboard_payment_past_due: "Pago atrasado",
+    dashboard_payment_incomplete: "Incompleto",
+    dashboard_payment_unpaid: "Sin pagar",
+    dashboard_payment_canceled: "Cancelado",
+    dashboard_payment_review: "Requiere revision",
+    ai_speed_slower: "Mas lenta",
+    ai_speed_fast: "Rapida",
+    ai_speed_fastest: "La mas rapida",
+    dashboard_billing_description:
+      "Stripe gestiona el ciclo de vida de tu suscripcion. Usa Billing Portal para bajar, subir o cancelar tu plan sin interrumpir el acceso al panel.",
     trial_banner_default: "Estas en una prueba con acceso completo.",
     trial_banner_ending: "Tu prueba termina en",
     trial_banner_choose: "Elige un plan para mantener el acceso.",
@@ -272,6 +499,12 @@ export const translations = {
     chat_mvp_assistant: "Asistente MVP",
     chat_recent_prompts: "Prompts recientes",
     chat_sample_prompts: "Ejemplos",
+    chat_sample_prompt_office:
+      "Limpieza semanal de oficina de 4,000 pies cuadrados, 3 banos, 2 areas de descanso, cotizacion para esta semana.",
+    chat_sample_prompt_moveout:
+      "Limpieza de mudanza para apartamento de 2 habitaciones y 2 banos con interior de horno y refrigerador.",
+    chat_sample_prompt_deep:
+      "Limpieza profunda para casa de 2,100 pies cuadrados con pelo de mascota, ventanas interiores y agenda urgente.",
     chat_placeholder:
       "Ejemplo: Limpieza profunda para casa de 3 habitaciones y 2 banos, 2,100 pies cuadrados, pelo de mascota, interior de refrigerador, cotizacion para manana.",
     chat_send: "Enviar",
@@ -279,6 +512,15 @@ export const translations = {
     chat_limit_inline:
       "Usaste todas tus cotizaciones en la ventana actual de 24 horas. Mejora tu plan o espera el siguiente reinicio.",
     chat_welcome: "Comparte los detalles del trabajo y generare una cotizacion simulada estructurada para este MVP.",
+    chat_elite_trial_active: "Prueba Elite activa: cotizaciones ilimitadas, historial completo y respuestas simuladas mas rapidas.",
+    chat_trial_keeps_elite:
+      "Tu prueba mantiene el panel con acceso Elite hasta que tu plan seleccionado entre en efecto.",
+    chat_unlimited_sessions: "El acceso {plan} incluye sesiones de cotizacion ilimitadas.",
+    chat_quotes_remaining: "{remaining} de {limit} cotizaciones restantes en esta ventana de 24 horas.",
+    chat_ai_speed_reset: "Velocidad IA: {speed}. Reinicio {reset}.",
+    chat_reset_at: "a las {time}",
+    chat_reset_auto: "automaticamente cada 24 horas",
+    chat_you: "Tu",
     results_panel: "Resultados",
     results_title: "Resultado de cotizacion",
     results_description:
@@ -303,6 +545,50 @@ export const translations = {
     results_saved_history_description:
       "RapidCleanAI guarda cada cotizacion en el servidor y aplica automaticamente las reglas de historial de tu plan.",
     results_no_saved: "Las cotizaciones generadas apareceran aqui cuando las crees.",
+    results_quotes_label: "Cotizaciones",
+    results_saved_quotes_label: "Cotizaciones guardadas",
+    results_export_label: "Exportar",
+    results_unlimited: "Ilimitado",
+    results_used_of_limit: "{used} usadas / {limit}",
+    results_trial_unlimited: "Las cuentas Trial y Elite se mantienen sin limite.",
+    results_remaining_before_reset: "{remaining} restantes antes del siguiente reinicio.",
+    results_saved_quotes_count: "{count} cotizaciones guardadas",
+    results_saved_quotes_visible: "{visible} de {limit} visibles",
+    results_unlimited_history: "Historial ilimitado",
+    results_day_history: "Historial de {days} dias",
+    results_enabled: "Activado",
+    results_upgrade_required: "Requiere mejora",
+    results_templates_included: "Plantillas incluidas en este plan.",
+    results_templates_elite: "Las plantillas se desbloquean en Elite.",
+    results_saved_recently: "Guardado recientemente",
+    results_suggested_range: "Rango sugerido",
+    results_protected_dashboard: "Panel protegido fase 1",
+    results_upgrade_daily:
+      "Mejora tu plan en Facturacion para aumentar tu capacidad sin esperar el reinicio de 24 horas.",
+    results_upgrade_capability: "Abre Facturacion para desbloquear mas capacidad en tu cuenta.",
+    results_upgrade_to: "Mejorar a {plan}",
+    results_manage_billing: "Gestionar facturacion",
+    results_hidden_saved_title:
+      "{plan} muestra tus {limit} cotizaciones guardadas mas recientes.",
+    results_hidden_saved_description:
+      "Mejora tu plan para desbloquear {count} cotizacion{plural} guardada adicional y conservar un historial mas largo.",
+    results_unlock_export_title: "Exportar esta bloqueado en Starter.",
+    results_unlock_export_description:
+      "Mejora a Pro o Elite para exportar cotizaciones guardadas para entrega, revision o archivo.",
+    results_unlock_export_cta: "Desbloquear exportacion",
+    results_upgrade_billing: "Mejorar facturacion",
+    results_mock_ready: "Cotizacion simulada lista. Precio recomendado: ${amount}.",
+    results_invalid_response: "La respuesta de cotizacion no fue valida. Intentalo de nuevo.",
+    results_endpoint_failed: "El endpoint de cotizacion simulada no respondio.",
+    results_generate_failed: "No se pudo generar una cotizacion en este momento.",
+    results_export_failed: "No se pudo exportar cotizaciones en este momento.",
+    dashboard_quote_limit_error: "Llegaste a tu limite de cotizaciones.",
+    copy_quote_title: "Cotizacion RapidCleanAI",
+    copy_request_id: "ID de solicitud",
+    copy_recommended: "Recomendado",
+    copy_range: "Rango",
+    copy_summary: "Resumen",
+    copy_customer_message: "Mensaje al cliente",
     upgrade_modal_title: "Llegaste a tu limite de cotizaciones",
     upgrade_modal_body:
       "Generaste {usage} cotizaciones en tu ventana de 24 horas. Mejora tu plan para seguir cotizando y cerrar mas trabajos.",
@@ -310,6 +596,8 @@ export const translations = {
     upgrade_modal_cta: "Mejorar a Pro",
     upgrade_modal_secondary: "Ahora no",
     upgrade_modal_recommended: "Recomendado",
+    upgrade_modal_heading: "Mejora recomendada",
+    upgrade_modal_trial_ending: "Tu prueba con acceso completo termina pronto.",
     upgrade_modal_starter:
       "Pro es recomendado para equipos Starter que necesitan mas capacidad y menos interrupciones.",
   },

@@ -19,14 +19,6 @@ import { SectionHeading } from "@/components/section-heading";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { buttonVariants } from "@/components/ui/button";
-import {
-  benefitBullets,
-  homeProblems,
-  homeSolutions,
-  homeSteps,
-  operatorFeedback,
-  pricingFeatures,
-} from "@/lib/site";
 import { BILLING_ENTRY_HREF } from "@/lib/stripe";
 import { cn } from "@/lib/utils";
 
@@ -36,6 +28,79 @@ export default function HomePage() {
     t("home_trust_businesses"),
     t("home_trust_fast"),
     t("home_trust_margins"),
+  ];
+  const homeProblems = [
+    {
+      title: t("home_problem_1_title"),
+      description: t("home_problem_1_description"),
+    },
+    {
+      title: t("home_problem_2_title"),
+      description: t("home_problem_2_description"),
+    },
+    {
+      title: t("home_problem_3_title"),
+      description: t("home_problem_3_description"),
+    },
+  ];
+  const homeSolutions = [
+    {
+      title: t("home_solution_1_title"),
+      description: t("home_solution_1_description"),
+    },
+    {
+      title: t("home_solution_2_title"),
+      description: t("home_solution_2_description"),
+    },
+    {
+      title: t("home_solution_3_title"),
+      description: t("home_solution_3_description"),
+    },
+  ];
+  const homeSteps = [
+    {
+      step: "01",
+      title: t("home_step_1_title"),
+      description: t("home_step_1_description"),
+    },
+    {
+      step: "02",
+      title: t("home_step_2_title"),
+      description: t("home_step_2_description"),
+    },
+    {
+      step: "03",
+      title: t("home_step_3_title"),
+      description: t("home_step_3_description"),
+    },
+  ];
+  const benefitBullets = [
+    t("home_benefit_1"),
+    t("home_benefit_2"),
+    t("home_benefit_3"),
+    t("home_benefit_4"),
+  ];
+  const operatorFeedback = [
+    {
+      quote: t("home_testimonial_1_quote"),
+      role: t("home_testimonial_1_role"),
+    },
+    {
+      quote: t("home_testimonial_2_quote"),
+      role: t("home_testimonial_2_role"),
+    },
+    {
+      quote: t("home_testimonial_3_quote"),
+      role: t("home_testimonial_3_role"),
+    },
+  ];
+  const pricingFeatures = [
+    t("pricing_feature_unlimited"),
+    t("pricing_feature_guidance"),
+    t("pricing_feature_messages"),
+    t("pricing_feature_assistant"),
+    t("pricing_feature_dashboard"),
+    t("pricing_feature_support"),
   ];
 
   return (
@@ -105,7 +170,7 @@ export default function HomePage() {
                 <div className="flex items-center justify-between gap-3">
                   <p className="text-sm font-semibold text-white">{t("home_example_output")}</p>
                   <span className="rounded-full border border-brand-cyan/20 bg-brand-cyan/10 px-3 py-1 text-xs uppercase tracking-[0.18em] text-brand-cyan">
-                    MVP stub
+                    {t("home_mvp_stub")}
                   </span>
                 </div>
                 <div className="mt-4 space-y-3 text-sm text-brand-muted">

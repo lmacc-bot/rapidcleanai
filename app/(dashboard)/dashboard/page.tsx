@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { GlowButton } from "@/components/glow-button";
 import { TrialCountdownBanner } from "@/components/trial-countdown-banner";
-import { T } from "@/components/translated-text";
+import { T, TFormat } from "@/components/translated-text";
 import { Card, CardContent } from "@/components/ui/card";
 import { getQuoteWorkspaceSnapshot } from "@/lib/quote-usage";
 import { getBillingAccessStatus } from "@/lib/supabase/access";
@@ -12,10 +12,11 @@ import {
   getStripeSubscriptionSummaryByEmail,
 } from "@/lib/stripe-billing";
 import {
-  formatBillingAiSpeed,
   getBillingPlanLabel,
   MANAGE_BILLING_HREF,
+  type BillingAiSpeed,
 } from "@/lib/stripe";
+import type { TranslationKey } from "@/lib/translations";
 
 export const metadata: Metadata = {
   title: "Dashboard",
@@ -38,27 +39,45 @@ function formatPlan(plan: string | null) {
   return getBillingPlanLabel(plan);
 }
 
-function formatPaymentStatus(paymentStatus: string | null) {
-  if (!paymentStatus) {
-    return "Pending";
-  }
-
-  return paymentStatus
-    .split("_")
-    .map((segment) => segment.charAt(0).toUpperCase() + segment.slice(1))
-    .join(" ");
-}
-
-function formatHistoryWindow(historyDays: number | null) {
-  return historyDays === null ? "Unlimited" : `${historyDays} days`;
-}
-
 function formatQuoteCapacity(limit: number | null) {
-  return limit === null ? "Unlimited" : `${limit} / 24h`;
+  return limit === null ? null : `${limit} / 24h`;
 }
 
-function formatSavedQuoteCapacity(visible: number, limit: number | null) {
-  return limit === null ? `${visible} saved` : `${visible} / ${limit}`;
+function getPaymentStatusKey(paymentStatus: string | null): TranslationKey {
+  switch (paymentStatus) {
+    case "active":
+      return "dashboard_payment_active";
+    case "trialing":
+      return "dashboard_payment_trialing";
+    case "no_trial":
+      return "dashboard_payment_no_trial";
+    case "past_due":
+      return "dashboard_payment_past_due";
+    case "incomplete":
+      return "dashboard_payment_incomplete";
+    case "unpaid":
+      return "dashboard_payment_unpaid";
+    case "canceled":
+    case "cancelled":
+      return "dashboard_payment_canceled";
+    case "pending":
+    case null:
+    case undefined:
+      return "dashboard_payment_pending";
+    default:
+      return "dashboard_payment_review";
+  }
+}
+
+function getAiSpeedKey(speed: BillingAiSpeed): TranslationKey {
+  switch (speed) {
+    case "slower":
+      return "ai_speed_slower";
+    case "fast":
+      return "ai_speed_fast";
+    case "fastest":
+      return "ai_speed_fastest";
+  }
 }
 
 export default async function DashboardPage() {
@@ -98,10 +117,9 @@ export default async function DashboardPage() {
     profile?.full_name ||
     (typeof user.user_metadata.full_name === "string" ? user.user_metadata.full_name : null) ||
     user.email?.split("@")[0] ||
-    "there";
+    null;
   const isTrialing = access.paymentStatus === "trialing";
   const selectedPlan = stripeSummary?.plan ?? quoteWorkspace.usage.selectedPlan;
-  const effectiveAccessLabel = isTrialing ? "Elite Trial" : formatPlan(selectedPlan);
 
   return (
     <div className="space-y-8">
@@ -119,7 +137,7 @@ export default async function DashboardPage() {
               <T k="dashboard_label" />
             </p>
             <h1 className="mt-3 font-display text-4xl text-white">
-              <T k="dashboard_welcome" />, {fullName}.
+              <T k="dashboard_welcome" />, {fullName ?? <T k="dashboard_fallback_name" />}.
             </h1>
             <p className="mt-4 max-w-3xl text-base leading-8 text-brand-muted">
               <T k="dashboard_intro" />
@@ -149,14 +167,16 @@ export default async function DashboardPage() {
                   <T k="dashboard_payment" />
                 </p>
                 <p className="mt-2 text-white">
-                  {formatPaymentStatus(stripeSummary?.status ?? access.paymentStatus)}
+                  <T k={getPaymentStatusKey(stripeSummary?.status ?? access.paymentStatus)} />
                 </p>
               </div>
               <div>
                 <p className="text-xs uppercase tracking-[0.16em] text-brand-muted">
                   <T k="dashboard_access" />
                 </p>
-                <p className="mt-2 text-brand-neon">{effectiveAccessLabel}</p>
+                <p className="mt-2 text-brand-neon">
+                  {isTrialing ? <T k="dashboard_elite_trial" /> : formatPlan(selectedPlan)}
+                </p>
               </div>
             </div>
             <div className="grid gap-4 rounded-3xl border border-white/10 bg-[rgba(11,15,20,0.62)] p-4 sm:grid-cols-4">
@@ -165,9 +185,9 @@ export default async function DashboardPage() {
                   <T k="dashboard_quotes" />
                 </p>
                 <p className="mt-2 text-white">
-                  {quoteWorkspace.usage.quotesUsed} used
+                  {quoteWorkspace.usage.quotesUsed} <T k="dashboard_used" />
                   <span className="block text-xs text-brand-muted">
-                    {formatQuoteCapacity(quoteWorkspace.usage.quoteLimit)}
+                    {formatQuoteCapacity(quoteWorkspace.usage.quoteLimit) ?? <T k="results_unlimited" />}
                   </span>
                 </p>
               </div>
@@ -176,9 +196,13 @@ export default async function DashboardPage() {
                   <T k="dashboard_saved_quotes" />
                 </p>
                 <p className="mt-2 text-white">
-                  {formatSavedQuoteCapacity(
-                    quoteWorkspace.usage.savedQuotesVisible,
-                    quoteWorkspace.usage.savedQuotesLimit,
+                  {quoteWorkspace.usage.savedQuotesLimit === null ? (
+                    <TFormat
+                      k="dashboard_saved_count"
+                      values={{ count: quoteWorkspace.usage.savedQuotesVisible }}
+                    />
+                  ) : (
+                    `${quoteWorkspace.usage.savedQuotesVisible} / ${quoteWorkspace.usage.savedQuotesLimit}`
                   )}
                 </p>
               </div>
@@ -186,13 +210,24 @@ export default async function DashboardPage() {
                 <p className="text-xs uppercase tracking-[0.16em] text-brand-muted">
                   <T k="dashboard_history" />
                 </p>
-                <p className="mt-2 text-white">{formatHistoryWindow(quoteWorkspace.usage.historyDays)}</p>
+                <p className="mt-2 text-white">
+                  {quoteWorkspace.usage.historyDays === null ? (
+                    <T k="results_unlimited" />
+                  ) : (
+                    <TFormat
+                      k="dashboard_history_days"
+                      values={{ days: quoteWorkspace.usage.historyDays }}
+                    />
+                  )}
+                </p>
               </div>
               <div>
                 <p className="text-xs uppercase tracking-[0.16em] text-brand-muted">
                   <T k="dashboard_ai_speed" />
                 </p>
-                <p className="mt-2 text-white">{formatBillingAiSpeed(quoteWorkspace.usage.aiSpeed)}</p>
+                <p className="mt-2 text-white">
+                  <T k={getAiSpeedKey(quoteWorkspace.usage.aiSpeed)} />
+                </p>
               </div>
             </div>
             {isTrialing ? (
@@ -210,8 +245,7 @@ export default async function DashboardPage() {
                 <T k="dashboard_billing" />
               </p>
               <p className="mt-1 text-white">
-                Stripe manages your subscription lifecycle now. Use Billing Portal to downgrade,
-                upgrade, or cancel without interrupting the dashboard access flow.
+                <T k="dashboard_billing_description" />
               </p>
             </div>
             <div className="pt-2">

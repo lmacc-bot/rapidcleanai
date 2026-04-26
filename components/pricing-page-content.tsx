@@ -4,7 +4,6 @@ import { GlowButton } from "@/components/glow-button";
 import { useT } from "@/components/language-provider";
 import { SectionHeading } from "@/components/section-heading";
 import { Card, CardContent } from "@/components/ui/card";
-import { pricingFaqItems } from "@/lib/site";
 import {
   BILLING_PLANS,
   type BillingPlanId,
@@ -45,6 +44,42 @@ const pricingTrustItems = [
   "pricing_secure_checkout",
   "pricing_no_forced_cancel",
 ] satisfies TranslationKey[];
+
+const pricingPlanHighlights = {
+  starter: [
+    "pricing_plan_highlight_trial",
+    "pricing_starter_highlight_fit",
+    "pricing_starter_highlight_change",
+  ],
+  pro: [
+    "pricing_plan_highlight_trial",
+    "pricing_pro_highlight_fit",
+    "pricing_pro_highlight_change",
+  ],
+  elite: [
+    "pricing_plan_highlight_trial",
+    "pricing_elite_highlight_fit",
+    "pricing_elite_highlight_change",
+  ],
+} satisfies Record<BillingPlanId, TranslationKey[]>;
+
+const pricingFaqItems = [
+  {
+    question: "pricing_faq_1_question",
+    answer: "pricing_faq_1_answer",
+  },
+  {
+    question: "pricing_faq_2_question",
+    answer: "pricing_faq_2_answer",
+  },
+  {
+    question: "pricing_faq_3_question",
+    answer: "pricing_faq_3_answer",
+  },
+] satisfies Array<{
+  question: TranslationKey;
+  answer: TranslationKey;
+}>;
 
 export function PricingPageContent() {
   const t = useT();
@@ -101,19 +136,19 @@ export function PricingPageContent() {
                       )}
                     >
                       <div className="font-display text-3xl font-semibold text-brand-neon">
-                        {TRIAL_PERIOD_DAYS} days
+                        {TRIAL_PERIOD_DAYS} {t("pricing_days")}
                       </div>
                       <div className="text-sm text-brand-muted">{t("pricing_trial_days")}</div>
                     </div>
                   </div>
                   <p className="text-sm leading-7 text-brand-muted">{t(positioning.description)}</p>
                   <ul className="grid gap-3 text-sm text-brand-text">
-                    {plan.highlights.map((highlight) => (
+                    {pricingPlanHighlights[planId].map((highlight) => (
                       <li
                         key={highlight}
                         className="rounded-2xl border border-white/8 bg-white/5 px-4 py-3"
                       >
-                        {highlight}
+                        {t(highlight)}
                       </li>
                     ))}
                   </ul>
@@ -148,8 +183,8 @@ export function PricingPageContent() {
           {pricingFaqItems.map((item) => (
             <Card key={item.question} className="surface-gradient premium-border">
               <CardContent className="p-6">
-                <h3 className="font-display text-xl text-white">{item.question}</h3>
-                <p className="mt-3 text-sm leading-7 text-brand-muted">{item.answer}</p>
+                <h3 className="font-display text-xl text-white">{t(item.question)}</h3>
+                <p className="mt-3 text-sm leading-7 text-brand-muted">{t(item.answer)}</p>
               </CardContent>
             </Card>
           ))}
