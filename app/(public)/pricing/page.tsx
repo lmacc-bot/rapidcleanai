@@ -5,14 +5,31 @@ import { Card, CardContent } from "@/components/ui/card";
 import { pricingFaqItems } from "@/lib/site";
 import {
   BILLING_PLANS,
+  type BillingPlanId,
   getCheckoutStartHref,
   TRIAL_PERIOD_DAYS,
 } from "@/lib/stripe";
+import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
   title: "Pricing",
   description: "Choose Starter, Pro, or Elite with a 14-day full-access trial.",
 };
+
+const pricingPositioning = {
+  starter: {
+    label: "For testing the waters",
+    description: "A simple entry plan for occasional quotes.",
+  },
+  pro: {
+    label: "Most Popular",
+    description: "Best for cleaning businesses that quote jobs daily.",
+  },
+  elite: {
+    label: "For power users",
+    description: "Maximum quoting power for high-volume teams.",
+  },
+} satisfies Record<BillingPlanId, { label: string; description: string }>;
 
 export default function PricingPage() {
   return (
@@ -20,31 +37,59 @@ export default function PricingPage() {
       <SectionHeading
         eyebrow="Pricing"
         title="Simple pricing. Powerful results."
-        description={`Start with ${TRIAL_PERIOD_DAYS} days of full Elite-level access, then keep the plan you picked or downgrade later in Stripe Billing Portal.`}
+        description={`Start with ${TRIAL_PERIOD_DAYS} days of full-access Elite features. Choose the plan that fits before your trial ends.`}
         align="center"
       />
 
       <div className="mx-auto mt-10 grid max-w-6xl gap-5 lg:grid-cols-3">
         {(Object.entries(BILLING_PLANS) as [keyof typeof BILLING_PLANS, (typeof BILLING_PLANS)[keyof typeof BILLING_PLANS]][]).map(
-          ([planId, plan]) => (
-            <Card
-              key={planId}
-              className={`surface-gradient premium-border ${planId === "pro" ? "glow-ring" : ""}`}
-            >
-              <CardContent className="space-y-6 p-7">
+          ([planId, plan]) => {
+            const isPro = planId === "pro";
+            const positioning = pricingPositioning[planId];
+
+            return (
+              <Card
+                key={planId}
+                className={cn(
+                  "surface-gradient premium-border",
+                  isPro
+                    ? "glow-ring border-brand-neon/35 shadow-[0_24px_90px_rgba(34,255,136,0.14)] lg:-mt-4 lg:scale-[1.03]"
+                    : "border-white/10",
+                )}
+              >
+              <CardContent className={cn("space-y-6 p-7", isPro ? "lg:p-8" : null)}>
                 <div className="flex items-start justify-between gap-4">
                   <div>
-                    <p className="text-xs uppercase tracking-[0.18em] text-brand-cyan">{plan.badge}</p>
+                    <p
+                      className={cn(
+                        "text-xs uppercase tracking-[0.18em]",
+                        isPro ? "text-brand-neon" : "text-brand-cyan",
+                      )}
+                    >
+                      {positioning.label}
+                    </p>
                     <h2 className="mt-3 font-display text-3xl text-white">{plan.name}</h2>
+                    {isPro ? (
+                      <span className="mt-3 inline-flex rounded-full border border-brand-neon/25 bg-brand-neon/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-brand-neon">
+                        Most Popular
+                      </span>
+                    ) : null}
                   </div>
-                  <div className="rounded-2xl border border-brand-neon/20 bg-brand-neon/10 px-4 py-3 text-right">
+                  <div
+                    className={cn(
+                      "rounded-2xl border px-4 py-3 text-right",
+                      isPro
+                        ? "border-brand-neon/30 bg-brand-neon/15"
+                        : "border-brand-neon/20 bg-brand-neon/10",
+                    )}
+                  >
                     <div className="font-display text-3xl font-semibold text-brand-neon">
                       {TRIAL_PERIOD_DAYS} days
                     </div>
                     <div className="text-sm text-brand-muted">full access trial</div>
                   </div>
                 </div>
-                <p className="text-sm leading-7 text-brand-muted">{plan.description}</p>
+                <p className="text-sm leading-7 text-brand-muted">{positioning.description}</p>
                 <ul className="grid gap-3 text-sm text-brand-text">
                   {plan.highlights.map((highlight) => (
                     <li
@@ -55,10 +100,13 @@ export default function PricingPage() {
                     </li>
                   ))}
                 </ul>
-                <GlowButton href={getCheckoutStartHref(planId)}>Start {plan.name} Trial</GlowButton>
+                <GlowButton href={getCheckoutStartHref(planId)} variant={isPro ? "primary" : "secondary"}>
+                  Start {plan.name} Trial
+                </GlowButton>
               </CardContent>
             </Card>
-          ),
+            );
+          },
         )}
       </div>
 
