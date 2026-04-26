@@ -155,7 +155,7 @@ export const translations = {
     dashboard_welcome: "Welcome back",
     dashboard_fallback_name: "there",
     dashboard_intro:
-      "This protected MVP workspace lets you test the quote experience now while keeping the AI layer safely stubbed.",
+      "This protected MVP workspace now uses a practical rules-based quote engine while staying ready for a future AI layer.",
     dashboard_account: "Account",
     dashboard_profile_email: "Profile email",
     dashboard_plan: "Plan",
@@ -211,8 +211,8 @@ export const translations = {
     chat_generating: "Generating...",
     chat_limit_inline:
       "You have used every quote in the current 24-hour window. Upgrade in Billing or wait for the next reset to keep quoting.",
-    chat_welcome: "Share the job details and I will generate a structured mock quote response for this MVP.",
-    chat_elite_trial_active: "Elite trial active: unlimited quotes, full history, and fastest mock responses.",
+    chat_welcome: "Share the job details and I will generate a structured quote estimate for this MVP.",
+    chat_elite_trial_active: "Elite trial active: unlimited quotes, full history, and fastest quote responses.",
     chat_trial_keeps_elite:
       "Your trial keeps the dashboard at Elite-level access until Stripe switches you to your selected plan.",
     chat_unlimited_sessions: "{plan} access includes unlimited quote sessions.",
@@ -224,7 +224,7 @@ export const translations = {
     results_panel: "Results Panel",
     results_title: "Quote output",
     results_description:
-      "Review the mock structured result now, then swap this route to a real AI backend when you are ready.",
+      "Review the structured quote result now, then connect a full AI backend when you are ready.",
     results_new_quote: "New Quote",
     results_copy: "Copy",
     results_copied: "Copied",
@@ -277,9 +277,9 @@ export const translations = {
       "Upgrade to Pro or Elite in Billing to export saved quotes for handoff, review, or archiving.",
     results_unlock_export_cta: "Unlock Export",
     results_upgrade_billing: "Upgrade Billing",
-    results_mock_ready: "Mock quote ready. Recommended estimate: ${amount}.",
+    results_mock_ready: "Quote ready. Recommended estimate: ${amount}.",
     results_invalid_response: "The quote response was invalid. Please try again.",
-    results_endpoint_failed: "The mock quote endpoint did not respond.",
+    results_endpoint_failed: "The quote endpoint did not respond.",
     results_generate_failed: "Unable to generate a quote right now.",
     results_export_failed: "Unable to export quotes right now.",
     dashboard_quote_limit_error: "You have reached your quote limit.",
@@ -355,7 +355,7 @@ export const translations = {
     home_solution_2_title: "Responde en minutos, no horas",
     home_solution_2_description:
       "Usa prompts guiados y mensajes listos para enviar respuestas pulidas mientras el lead sigue caliente.",
-    home_solution_3_title: "Mantén el trabajo en un solo panel",
+    home_solution_3_title: "Manten el trabajo en un solo panel",
     home_solution_3_description:
       "Tu espacio de cotizacion sigue simple: prompt a la izquierda, resultados a la derecha, listo en escritorio y movil.",
     home_steps_eyebrow: "Como funciona",
@@ -377,7 +377,7 @@ export const translations = {
     home_benefit_1: "Cotiza mas trabajos sin sumar horas administrativas",
     home_benefit_2: "Protege margenes con disciplina de precios mas clara",
     home_benefit_3: "Responde desde escritorio, tablet o movil",
-    home_benefit_4: "Mantén tu stack MVP simple para lanzar ahora",
+    home_benefit_4: "Manten tu stack MVP simple para lanzar ahora",
     home_monetization_label: "Listo para cobrar",
     home_monetization_text: "Las suscripciones con prueba inicial ya estan conectadas.",
     home_access_label: "Acceso protegido",
@@ -412,7 +412,7 @@ export const translations = {
     home_final_eyebrow: "CTA final",
     home_final_title: "Lanza un flujo de cotizacion mas limpio y empieza a cobrar ahora.",
     home_final_description:
-      "Mantén la fase 1 enfocada en conversion, checkout, acceso protegido y un panel que tus clientes ya pueden usar.",
+      "Manten la fase 1 enfocada en conversion, checkout, acceso protegido y un panel que tus clientes ya pueden usar.",
     pricing_eyebrow: "Precios",
     pricing_title: "Precios simples. Resultados potentes.",
     pricing_description:
@@ -434,7 +434,7 @@ export const translations = {
     pricing_pro_highlight_fit: "Opcion equilibrada para negocios de limpieza en crecimiento",
     pricing_pro_highlight_change: "Baja, sube o cancela sin contactar soporte",
     pricing_elite_highlight_fit: "Ideal para equipos que quieren mas capacidad",
-    pricing_elite_highlight_change: "Mantén control completo en Stripe Billing Portal",
+    pricing_elite_highlight_change: "Manten control completo en Stripe Billing Portal",
     pricing_full_trial: "Acceso Elite completo durante la prueba",
     pricing_change_plan: "Baja, sube o cancela en Billing Portal",
     pricing_secure_checkout: "Checkout seguro con Stripe",
@@ -455,7 +455,7 @@ export const translations = {
     dashboard_welcome: "Bienvenido de nuevo",
     dashboard_fallback_name: "equipo",
     dashboard_intro:
-      "Este espacio MVP protegido te permite probar la experiencia de cotizacion mientras la capa de IA sigue segura y simulada.",
+      "Este espacio MVP protegido ahora usa un motor practico de cotizacion por reglas y queda listo para una futura capa de IA.",
     dashboard_account: "Cuenta",
     dashboard_profile_email: "Email del perfil",
     dashboard_plan: "Plan",
@@ -490,7 +490,7 @@ export const translations = {
     trial_banner_default: "Estas en una prueba con acceso completo.",
     trial_banner_ending: "Tu prueba termina en",
     trial_banner_choose: "Elige un plan para mantener el acceso.",
-    trial_banner_keep_moving: "Mantén tu flujo de cotizaciones sin interrupciones.",
+    trial_banner_keep_moving: "Manten tu flujo de cotizaciones sin interrupciones.",
     trial_banner_manage_plan: "Gestionar plan",
     chat_panel: "Chat",
     chat_title: "Describe la solicitud de cotizacion",
@@ -511,8 +511,8 @@ export const translations = {
     chat_generating: "Generando...",
     chat_limit_inline:
       "Usaste todas tus cotizaciones en la ventana actual de 24 horas. Mejora tu plan o espera el siguiente reinicio.",
-    chat_welcome: "Comparte los detalles del trabajo y generare una cotizacion simulada estructurada para este MVP.",
-    chat_elite_trial_active: "Prueba Elite activa: cotizaciones ilimitadas, historial completo y respuestas simuladas mas rapidas.",
+    chat_welcome: "Comparte los detalles del trabajo y generare una cotizacion estructurada para este MVP.",
+    chat_elite_trial_active: "Prueba Elite activa: cotizaciones ilimitadas, historial completo y respuestas de cotizacion mas rapidas.",
     chat_trial_keeps_elite:
       "Tu prueba mantiene el panel con acceso Elite hasta que tu plan seleccionado entre en efecto.",
     chat_unlimited_sessions: "El acceso {plan} incluye sesiones de cotizacion ilimitadas.",
@@ -524,7 +524,7 @@ export const translations = {
     results_panel: "Resultados",
     results_title: "Resultado de cotizacion",
     results_description:
-      "Revisa el resultado estructurado simulado ahora y cambia esta ruta a una IA real cuando estes listo.",
+      "Revisa el resultado estructurado ahora y conecta una IA completa cuando estes listo.",
     results_new_quote: "Nueva cotizacion",
     results_copy: "Copiar",
     results_copied: "Copiado",
@@ -577,9 +577,9 @@ export const translations = {
       "Mejora a Pro o Elite para exportar cotizaciones guardadas para entrega, revision o archivo.",
     results_unlock_export_cta: "Desbloquear exportacion",
     results_upgrade_billing: "Mejorar facturacion",
-    results_mock_ready: "Cotizacion simulada lista. Precio recomendado: ${amount}.",
+    results_mock_ready: "Cotizacion lista. Precio recomendado: ${amount}.",
     results_invalid_response: "La respuesta de cotizacion no fue valida. Intentalo de nuevo.",
-    results_endpoint_failed: "El endpoint de cotizacion simulada no respondio.",
+    results_endpoint_failed: "El endpoint de cotizacion no respondio.",
     results_generate_failed: "No se pudo generar una cotizacion en este momento.",
     results_export_failed: "No se pudo exportar cotizaciones en este momento.",
     dashboard_quote_limit_error: "Llegaste a tu limite de cotizaciones.",

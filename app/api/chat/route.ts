@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { createMockQuote, isMockQuoteResponse } from "@/lib/mock-quote";
+import { isMockQuoteResponse } from "@/lib/mock-quote";
+import { createQuoteEstimate } from "@/lib/quote-engine";
 import { buildQuoteUsageHeaders, checkQuoteGenerationAllowance, recordGeneratedQuote } from "@/lib/quote-usage";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { getBillingPlanLimits } from "@/lib/stripe";
@@ -132,7 +133,7 @@ function getClientAddress(request: Request) {
   return forwardedFor?.split(",")[0]?.trim() || "unknown";
 }
 
-async function waitForMockResponse(ms: number) {
+async function waitForQuoteResponse(ms: number) {
   if (ms <= 0) {
     return;
   }
@@ -235,9 +236,9 @@ export async function POST(request: Request) {
   }
 
   try {
-    await waitForMockResponse(getBillingPlanLimits(quoteAllowance.plan.effectivePlan).mockResponseDelayMs);
+    await waitForQuoteResponse(getBillingPlanLimits(quoteAllowance.plan.effectivePlan).mockResponseDelayMs);
 
-    const result = createMockQuote(parsedPrompt.data, language);
+    const result = await createQuoteEstimate(parsedPrompt.data, language);
 
     if (!isMockQuoteResponse(result)) {
       return jsonError("Unable to generate a valid quote right now.", 502, rateLimitHeaders);

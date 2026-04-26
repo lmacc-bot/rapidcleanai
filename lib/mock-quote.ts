@@ -1,6 +1,13 @@
 import { DEFAULT_LANGUAGE, type Language } from "@/lib/translations";
 import { sanitizePlainText } from "@/lib/validation";
 
+export type QuoteBreakdownLineItem = {
+  label: string;
+  low: number;
+  high: number;
+  note?: string;
+};
+
 export type MockQuoteResponse = {
   requestId: string;
   generatedAt: string;
@@ -18,6 +25,31 @@ export type MockQuoteResponse = {
   upsellSuggestions: string[];
   customerMessage: string;
   nextActions: string[];
+  estimatedLaborHours?: {
+    low: number;
+    high: number;
+    recommended: number;
+  };
+  breakdownLineItems?: QuoteBreakdownLineItem[];
+  assumptions?: string[];
+  detectedAddress?: string | null;
+  propertyDataResolved?: boolean;
+  parsedInputs?: {
+    squareFootage: number | null;
+    beds: number | null;
+    baths: number | null;
+    cleaningType: "standard" | "deep" | "move_out";
+    pets: boolean;
+    petHair: boolean;
+    interiorWindows: boolean;
+    interiorWindowCount: number | null;
+    fridge: boolean;
+    oven: boolean;
+    rush: boolean;
+    occupied: boolean;
+    empty: boolean;
+    heavyCondition: boolean;
+  };
 };
 
 export const MOCK_AI_SYSTEM_GUARDRAILS = [
@@ -63,6 +95,105 @@ function createRequestId() {
   return `rca_${Math.random().toString(36).slice(2, 10)}`;
 }
 
+function isFiniteNumber(value: unknown): value is number {
+  return typeof value === "number" && Number.isFinite(value);
+}
+
+function isStringArray(value: unknown): value is string[] {
+  return Array.isArray(value) && value.every((item) => typeof item === "string");
+}
+
+function isQuoteBreakdownLineItem(value: unknown): value is QuoteBreakdownLineItem {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+
+  const candidate = value as Partial<QuoteBreakdownLineItem>;
+
+  return (
+    typeof candidate.label === "string" &&
+    isFiniteNumber(candidate.low) &&
+    isFiniteNumber(candidate.high) &&
+    (candidate.note === undefined || typeof candidate.note === "string")
+  );
+}
+
+function hasValidOptionalQuoteEngineFields(candidate: Partial<MockQuoteResponse>) {
+  if (candidate.estimatedLaborHours !== undefined) {
+    if (
+      candidate.estimatedLaborHours === null ||
+      typeof candidate.estimatedLaborHours !== "object" ||
+      !isFiniteNumber(candidate.estimatedLaborHours.low) ||
+      !isFiniteNumber(candidate.estimatedLaborHours.high) ||
+      !isFiniteNumber(candidate.estimatedLaborHours.recommended)
+    ) {
+      return false;
+    }
+  }
+
+  if (
+    candidate.breakdownLineItems !== undefined &&
+    (!Array.isArray(candidate.breakdownLineItems) ||
+      !candidate.breakdownLineItems.every(isQuoteBreakdownLineItem))
+  ) {
+    return false;
+  }
+
+  if (candidate.assumptions !== undefined && !isStringArray(candidate.assumptions)) {
+    return false;
+  }
+
+  if (
+    candidate.detectedAddress !== undefined &&
+    candidate.detectedAddress !== null &&
+    typeof candidate.detectedAddress !== "string"
+  ) {
+    return false;
+  }
+
+  if (
+    candidate.propertyDataResolved !== undefined &&
+    typeof candidate.propertyDataResolved !== "boolean"
+  ) {
+    return false;
+  }
+
+  if (candidate.parsedInputs !== undefined) {
+    if (candidate.parsedInputs === null || typeof candidate.parsedInputs !== "object") {
+      return false;
+    }
+
+    const parsedInputs = candidate.parsedInputs;
+    const validCleaningType =
+      parsedInputs.cleaningType === "standard" ||
+      parsedInputs.cleaningType === "deep" ||
+      parsedInputs.cleaningType === "move_out";
+    const validNullableNumber = (value: unknown) =>
+      value === null || isFiniteNumber(value);
+
+    if (
+      !validNullableNumber(parsedInputs.squareFootage) ||
+      !validNullableNumber(parsedInputs.beds) ||
+      !validNullableNumber(parsedInputs.baths) ||
+      !validCleaningType ||
+      typeof parsedInputs.pets !== "boolean" ||
+      typeof parsedInputs.petHair !== "boolean" ||
+      typeof parsedInputs.interiorWindows !== "boolean" ||
+      !validNullableNumber(parsedInputs.interiorWindowCount) ||
+      typeof parsedInputs.fridge !== "boolean" ||
+      typeof parsedInputs.oven !== "boolean" ||
+      typeof parsedInputs.rush !== "boolean" ||
+      typeof parsedInputs.occupied !== "boolean" ||
+      typeof parsedInputs.empty !== "boolean" ||
+      typeof parsedInputs.heavyCondition !== "boolean"
+    ) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 export function isMockQuoteResponse(value: unknown): value is MockQuoteResponse {
   if (!value || typeof value !== "object") {
     return false;
@@ -88,7 +219,8 @@ export function isMockQuoteResponse(value: unknown): value is MockQuoteResponse 
     candidate.upsellSuggestions.every((item) => typeof item === "string") &&
     typeof candidate.customerMessage === "string" &&
     Array.isArray(candidate.nextActions) &&
-    candidate.nextActions.every((item) => typeof item === "string")
+    candidate.nextActions.every((item) => typeof item === "string") &&
+    hasValidOptionalQuoteEngineFields(candidate)
   );
 }
 
