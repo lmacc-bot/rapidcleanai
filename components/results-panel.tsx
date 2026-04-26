@@ -4,6 +4,7 @@ import type { MockQuoteResponse } from "@/lib/mock-quote";
 import type { QuoteApiErrorPayload, QuoteUsageSummary, SavedQuoteSummary } from "@/lib/quote-limits";
 import { Copy, Download, FilePlus2, RotateCcw, ShieldCheck, Sparkles } from "lucide-react";
 import { GlowButton } from "@/components/glow-button";
+import { useT } from "@/components/language-provider";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -108,6 +109,7 @@ export function ResultsPanel({
   onClear,
   onExport,
 }: ResultsPanelProps) {
+  const t = useT();
   const upgradePrompt = getUpgradePrompt(usage, apiLimitError);
 
   return (
@@ -115,17 +117,17 @@ export function ResultsPanel({
       <CardHeader className="gap-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <Badge variant="secondary">Results Panel</Badge>
-            <CardTitle className="mt-3 text-2xl">Quote output</CardTitle>
+            <Badge variant="secondary">{t("results_panel")}</Badge>
+            <CardTitle className="mt-3 text-2xl">{t("results_title")}</CardTitle>
           </div>
           <div className="flex flex-wrap gap-2">
             <Button variant="secondary" size="sm" type="button" onClick={onNewQuote}>
               <FilePlus2 className="size-4" />
-              New Quote
+              {t("results_new_quote")}
             </Button>
             <Button variant="secondary" size="sm" type="button" onClick={onCopy} disabled={!result}>
               <Copy className="size-4" />
-              {copied ? "Copied" : "Copy"}
+              {copied ? t("results_copied") : t("results_copy")}
             </Button>
             <Button
               variant="secondary"
@@ -135,16 +137,16 @@ export function ResultsPanel({
               disabled={exporting || !usage.exportEnabled || recentQuotes.length === 0}
             >
               <Download className="size-4" />
-              {exporting ? "Exporting..." : "Export"}
+              {exporting ? t("results_exporting") : t("results_export")}
             </Button>
             <Button variant="secondary" size="sm" type="button" onClick={onClear}>
               <RotateCcw className="size-4" />
-              Clear
+              {t("results_clear")}
             </Button>
           </div>
         </div>
         <CardDescription className="text-base leading-7">
-          Review the mock structured result now, then swap this route to a real AI backend when you are ready.
+          {t("results_description")}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-5">
@@ -200,10 +202,10 @@ export function ResultsPanel({
               <Sparkles className="size-6" />
             </div>
             <h3 className="font-display text-2xl font-semibold text-white">
-              Your AI-generated quote will appear here.
+              {t("results_placeholder_title")}
             </h3>
             <p className="mt-3 max-w-md text-sm leading-7 text-brand-muted">
-              Send a prompt from the left panel to populate the recommended price range, scope notes, customer-ready response, and next actions.
+              {t("results_placeholder_description")}
             </p>
           </div>
         ) : null}
@@ -223,7 +225,7 @@ export function ResultsPanel({
           <div className="space-y-5">
             <div className="grid gap-4 md:grid-cols-[1.15fr_0.85fr]">
               <div className="rounded-3xl border border-brand-neon/20 bg-brand-neon/10 p-5 glow-ring">
-                <p className="text-xs uppercase tracking-[0.18em] text-brand-neon">Recommended Estimate</p>
+                <p className="text-xs uppercase tracking-[0.18em] text-brand-neon">{t("results_recommended_estimate")}</p>
                 <div className="mt-3 font-display text-5xl font-semibold text-white">
                   {money.format(result.recommendedEstimate.recommended)}
                 </div>
@@ -233,7 +235,7 @@ export function ResultsPanel({
                 </p>
               </div>
               <div className="rounded-3xl border border-brand-cyan/20 bg-brand-cyan/10 p-5">
-                <p className="text-xs uppercase tracking-[0.18em] text-brand-cyan">Margin Note</p>
+                <p className="text-xs uppercase tracking-[0.18em] text-brand-cyan">{t("results_margin_note")}</p>
                 <p className="mt-3 text-sm leading-7 text-brand-text">{result.marginNote}</p>
                 <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/6 px-3 py-1.5 text-xs uppercase tracking-[0.18em] text-brand-muted">
                   <ShieldCheck className="size-3.5 text-brand-neon" />
@@ -244,18 +246,18 @@ export function ResultsPanel({
 
             <div className="grid gap-4 lg:grid-cols-2">
               <div className="rounded-3xl border border-white/10 bg-white/5 p-5">
-                <h4 className="font-display text-xl text-white">Summary</h4>
+                <h4 className="font-display text-xl text-white">{t("results_summary")}</h4>
                 <p className="mt-3 text-sm leading-7 text-brand-muted">{result.summary}</p>
               </div>
               <div className="rounded-3xl border border-white/10 bg-white/5 p-5">
-                <h4 className="font-display text-xl text-white">Customer-ready message</h4>
+                <h4 className="font-display text-xl text-white">{t("results_customer_message")}</h4>
                 <p className="mt-3 text-sm leading-7 text-brand-muted">{result.customerMessage}</p>
               </div>
             </div>
 
             <div className="grid gap-4 lg:grid-cols-2">
               <div className="rounded-3xl border border-white/10 bg-white/5 p-5">
-                <h4 className="font-display text-xl text-white">Scope highlights</h4>
+                <h4 className="font-display text-xl text-white">{t("results_scope")}</h4>
                 <ul className="mt-4 space-y-3 text-sm leading-7 text-brand-muted">
                   {result.scopeHighlights.map((item) => (
                     <li key={item}>- {item}</li>
@@ -263,7 +265,7 @@ export function ResultsPanel({
                 </ul>
               </div>
               <div className="rounded-3xl border border-white/10 bg-white/5 p-5">
-                <h4 className="font-display text-xl text-white">Upsell suggestions</h4>
+                <h4 className="font-display text-xl text-white">{t("results_upsells")}</h4>
                 <ul className="mt-4 space-y-3 text-sm leading-7 text-brand-muted">
                   {result.upsellSuggestions.map((item) => (
                     <li key={item}>- {item}</li>
@@ -273,7 +275,7 @@ export function ResultsPanel({
             </div>
 
             <div className="rounded-3xl border border-white/10 bg-[rgba(11,15,20,0.62)] p-5">
-              <h4 className="font-display text-xl text-white">Next actions</h4>
+              <h4 className="font-display text-xl text-white">{t("results_next_actions")}</h4>
               <ul className="mt-4 space-y-3 text-sm leading-7 text-brand-muted">
                 {result.nextActions.map((item) => (
                   <li key={item}>- {item}</li>
@@ -286,9 +288,9 @@ export function ResultsPanel({
         <div className="rounded-3xl border border-white/10 bg-[rgba(11,15,20,0.62)] p-5">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <h4 className="font-display text-xl text-white">Saved quote history</h4>
+              <h4 className="font-display text-xl text-white">{t("results_saved_history")}</h4>
               <p className="mt-2 text-sm leading-7 text-brand-muted">
-                RapidCleanAI saves each generated quote server-side and applies your current plan history rules automatically.
+                {t("results_saved_history_description")}
               </p>
             </div>
             <Badge variant="secondary">{formatHistoryWindow(usage.historyDays)}</Badge>
@@ -313,7 +315,7 @@ export function ResultsPanel({
             </div>
           ) : (
             <p className="mt-5 text-sm leading-7 text-brand-muted">
-              Generated quotes will start appearing here as soon as you create them.
+              {t("results_no_saved")}
             </p>
           )}
         </div>

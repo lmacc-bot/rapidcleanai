@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { Menu, X } from "lucide-react";
 import { GlowButton } from "@/components/glow-button";
+import { LanguageToggle, useT } from "@/components/language-provider";
 import { Logo } from "@/components/logo";
 import { Button } from "@/components/ui/button";
 import { publicNavItems } from "@/lib/site";
@@ -25,8 +26,29 @@ type NavbarProps =
       logoutAction: LogoutAction;
     };
 
+function getPublicNavLabel(href: string, fallback: string, t: ReturnType<typeof useT>) {
+  if (href === "/features") {
+    return t("nav_features");
+  }
+
+  if (href === "/pricing") {
+    return t("nav_pricing");
+  }
+
+  if (href === "/faq") {
+    return t("nav_faq");
+  }
+
+  if (href === "/contact") {
+    return t("nav_contact");
+  }
+
+  return fallback;
+}
+
 export function Navbar(props: NavbarProps) {
   const [open, setOpen] = useState(false);
+  const t = useT();
   const variant = props.variant ?? "public";
   const dashboardUserLabel =
     props.variant === "dashboard"
@@ -46,35 +68,37 @@ export function Navbar(props: NavbarProps) {
                 <>
                   {publicNavItems.map((item) => (
                     <Link key={item.href} href={item.href} className="transition hover:text-white">
-                      {item.label}
+                      {getPublicNavLabel(item.href, item.label, t)}
                     </Link>
                   ))}
                   <Link href="/login" className="transition hover:text-white">
-                    Login
+                    {t("nav_login")}
                   </Link>
                   <GlowButton href={BILLING_ENTRY_HREF} className="px-4 py-2.5">
-                    Start Now
+                    {t("nav_start_now")}
                   </GlowButton>
+                  <LanguageToggle />
                 </>
               ) : (
                 <>
                   <Link href="/dashboard" className="transition hover:text-white">
-                    Dashboard
+                    {t("nav_dashboard")}
                   </Link>
                   <Link href={MANAGE_BILLING_HREF} className="transition hover:text-white">
-                    Billing
+                    {t("nav_billing")}
                   </Link>
                   <a href="#account" className="transition hover:text-white">
-                    Account
+                    {t("nav_account")}
                   </a>
                   <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs uppercase tracking-[0.18em] text-brand-muted">
                     {dashboardUserLabel}
                   </span>
                   <form action={logoutAction}>
                     <Button type="submit" variant="secondary" size="sm">
-                      Logout
+                      {t("nav_logout")}
                     </Button>
                   </form>
+                  <LanguageToggle />
                 </>
               )}
             </nav>
@@ -95,13 +119,13 @@ export function Navbar(props: NavbarProps) {
                 {variant === "public" ? (
                   <>
                     {publicNavItems.map((item) => (
-                      <Link
+                    <Link
                         key={item.href}
                         href={item.href}
                         className="rounded-2xl px-3 py-2 transition hover:bg-white/5 hover:text-white"
                         onClick={() => setOpen(false)}
                       >
-                        {item.label}
+                        {getPublicNavLabel(item.href, item.label, t)}
                       </Link>
                     ))}
                     <Link
@@ -109,11 +133,12 @@ export function Navbar(props: NavbarProps) {
                       className="rounded-2xl px-3 py-2 transition hover:bg-white/5 hover:text-white"
                       onClick={() => setOpen(false)}
                     >
-                      Login
+                      {t("nav_login")}
                     </Link>
                     <GlowButton href={BILLING_ENTRY_HREF} className="w-full justify-center" onClick={() => setOpen(false)}>
-                      Start Now
+                      {t("nav_start_now")}
                     </GlowButton>
+                    <LanguageToggle className="w-fit" />
                   </>
                 ) : (
                   <>
@@ -122,30 +147,31 @@ export function Navbar(props: NavbarProps) {
                       className="rounded-2xl px-3 py-2 transition hover:bg-white/5 hover:text-white"
                       onClick={() => setOpen(false)}
                     >
-                      Dashboard
+                      {t("nav_dashboard")}
                     </Link>
                     <Link
                       href={MANAGE_BILLING_HREF}
                       className="rounded-2xl px-3 py-2 transition hover:bg-white/5 hover:text-white"
                       onClick={() => setOpen(false)}
                     >
-                      Billing
+                      {t("nav_billing")}
                     </Link>
                     <a
                       href="#account"
                       className="rounded-2xl px-3 py-2 transition hover:bg-white/5 hover:text-white"
                       onClick={() => setOpen(false)}
                     >
-                      Account
+                      {t("nav_account")}
                     </a>
                     <div className="rounded-2xl border border-white/10 bg-white/5 px-3 py-2 text-xs uppercase tracking-[0.18em]">
                       {dashboardUserLabel}
                     </div>
                     <form action={logoutAction}>
                       <Button type="submit" variant="secondary" className="w-full">
-                        Logout
+                        {t("nav_logout")}
                       </Button>
                     </form>
+                    <LanguageToggle className="w-fit" />
                   </>
                 )}
               </div>

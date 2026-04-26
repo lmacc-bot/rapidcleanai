@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { GlowButton } from "@/components/glow-button";
 import { TrialCountdownBanner } from "@/components/trial-countdown-banner";
+import { T } from "@/components/translated-text";
 import { Card, CardContent } from "@/components/ui/card";
 import { getQuoteWorkspaceSnapshot } from "@/lib/quote-usage";
 import { getBillingAccessStatus } from "@/lib/supabase/access";
@@ -114,39 +115,55 @@ export default async function DashboardPage() {
       <section className="grid gap-5 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
         <Card className="surface-gradient premium-border">
           <CardContent className="p-7">
-            <p className="text-xs uppercase tracking-[0.18em] text-brand-neon">Dashboard</p>
-            <h1 className="mt-3 font-display text-4xl text-white">Welcome back, {fullName}.</h1>
+            <p className="text-xs uppercase tracking-[0.18em] text-brand-neon">
+              <T k="dashboard_label" />
+            </p>
+            <h1 className="mt-3 font-display text-4xl text-white">
+              <T k="dashboard_welcome" />, {fullName}.
+            </h1>
             <p className="mt-4 max-w-3xl text-base leading-8 text-brand-muted">
-              This protected MVP workspace lets you test the quote experience now while keeping the AI layer safely stubbed.
+              <T k="dashboard_intro" />
             </p>
           </CardContent>
         </Card>
         <Card id="account" className="surface-gradient premium-border">
           <CardContent className="space-y-4 p-7">
-            <p className="text-xs uppercase tracking-[0.18em] text-brand-cyan">Account</p>
+            <p className="text-xs uppercase tracking-[0.18em] text-brand-cyan">
+              <T k="dashboard_account" />
+            </p>
             <div>
-              <p className="text-sm text-brand-muted">Profile email</p>
+              <p className="text-sm text-brand-muted">
+                <T k="dashboard_profile_email" />
+              </p>
               <p className="mt-1 text-white">{profile?.email ?? user.email}</p>
             </div>
             <div className="grid gap-4 rounded-3xl border border-white/10 bg-white/5 p-4 sm:grid-cols-3">
               <div>
-                <p className="text-xs uppercase tracking-[0.16em] text-brand-muted">Plan</p>
+                <p className="text-xs uppercase tracking-[0.16em] text-brand-muted">
+                  <T k="dashboard_plan" />
+                </p>
                 <p className="mt-2 text-white">{formatPlan(selectedPlan)}</p>
               </div>
               <div>
-                <p className="text-xs uppercase tracking-[0.16em] text-brand-muted">Payment</p>
+                <p className="text-xs uppercase tracking-[0.16em] text-brand-muted">
+                  <T k="dashboard_payment" />
+                </p>
                 <p className="mt-2 text-white">
                   {formatPaymentStatus(stripeSummary?.status ?? access.paymentStatus)}
                 </p>
               </div>
               <div>
-                <p className="text-xs uppercase tracking-[0.16em] text-brand-muted">Access</p>
+                <p className="text-xs uppercase tracking-[0.16em] text-brand-muted">
+                  <T k="dashboard_access" />
+                </p>
                 <p className="mt-2 text-brand-neon">{effectiveAccessLabel}</p>
               </div>
             </div>
             <div className="grid gap-4 rounded-3xl border border-white/10 bg-[rgba(11,15,20,0.62)] p-4 sm:grid-cols-4">
               <div>
-                <p className="text-xs uppercase tracking-[0.16em] text-brand-muted">Quotes</p>
+                <p className="text-xs uppercase tracking-[0.16em] text-brand-muted">
+                  <T k="dashboard_quotes" />
+                </p>
                 <p className="mt-2 text-white">
                   {quoteWorkspace.usage.quotesUsed} used
                   <span className="block text-xs text-brand-muted">
@@ -155,7 +172,9 @@ export default async function DashboardPage() {
                 </p>
               </div>
               <div>
-                <p className="text-xs uppercase tracking-[0.16em] text-brand-muted">Saved Quotes</p>
+                <p className="text-xs uppercase tracking-[0.16em] text-brand-muted">
+                  <T k="dashboard_saved_quotes" />
+                </p>
                 <p className="mt-2 text-white">
                   {formatSavedQuoteCapacity(
                     quoteWorkspace.usage.savedQuotesVisible,
@@ -164,26 +183,32 @@ export default async function DashboardPage() {
                 </p>
               </div>
               <div>
-                <p className="text-xs uppercase tracking-[0.16em] text-brand-muted">History</p>
+                <p className="text-xs uppercase tracking-[0.16em] text-brand-muted">
+                  <T k="dashboard_history" />
+                </p>
                 <p className="mt-2 text-white">{formatHistoryWindow(quoteWorkspace.usage.historyDays)}</p>
               </div>
               <div>
-                <p className="text-xs uppercase tracking-[0.16em] text-brand-muted">AI Speed</p>
+                <p className="text-xs uppercase tracking-[0.16em] text-brand-muted">
+                  <T k="dashboard_ai_speed" />
+                </p>
                 <p className="mt-2 text-white">{formatBillingAiSpeed(quoteWorkspace.usage.aiSpeed)}</p>
               </div>
             </div>
             {isTrialing ? (
               <div className="rounded-3xl border border-brand-neon/20 bg-brand-neon/10 p-4">
                 <p className="text-sm font-semibold text-white">
-                  You are currently on a full-access trial. Choose your plan before the trial ends.
+                  <T k="dashboard_trial_notice" />
                 </p>
                 <p className="mt-2 text-sm text-brand-text">
-                  Use Billing to manage or change your plan anytime.
+                  <T k="dashboard_trial_manage" />
                 </p>
               </div>
             ) : null}
             <div>
-              <p className="text-sm text-brand-muted">Billing</p>
+              <p className="text-sm text-brand-muted">
+                <T k="dashboard_billing" />
+              </p>
               <p className="mt-1 text-white">
                 Stripe manages your subscription lifecycle now. Use Billing Portal to downgrade,
                 upgrade, or cancel without interrupting the dashboard access flow.
@@ -191,7 +216,7 @@ export default async function DashboardPage() {
             </div>
             <div className="pt-2">
               <GlowButton href={MANAGE_BILLING_HREF} variant="secondary" trailingIcon={false}>
-                Manage Billing
+                <T k="dashboard_manage_billing" />
               </GlowButton>
             </div>
           </CardContent>

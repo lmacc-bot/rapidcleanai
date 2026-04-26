@@ -4,6 +4,7 @@ import { buildQuoteUsageHeaders, checkQuoteGenerationAllowance, recordGeneratedQ
 import { checkRateLimit } from "@/lib/rate-limit";
 import { getBillingPlanLimits } from "@/lib/stripe";
 import { getServerUser } from "@/lib/supabase/auth";
+import { DEFAULT_LANGUAGE, isLanguage } from "@/lib/translations";
 import { validateChatPromptInput } from "@/lib/validation";
 
 const MAX_CHAT_BODY_BYTES = 4 * 1024;
@@ -202,6 +203,7 @@ export async function POST(request: Request) {
   }
 
   const parsedPrompt = validateChatPromptInput(parsedBody.data.prompt);
+  const language = isLanguage(parsedBody.data.language) ? parsedBody.data.language : DEFAULT_LANGUAGE;
 
   if (!parsedPrompt.success) {
     return jsonError(parsedPrompt.message, 400, rateLimitHeaders);
@@ -235,7 +237,7 @@ export async function POST(request: Request) {
   try {
     await waitForMockResponse(getBillingPlanLimits(quoteAllowance.plan.effectivePlan).mockResponseDelayMs);
 
-    const result = createMockQuote(parsedPrompt.data);
+    const result = createMockQuote(parsedPrompt.data, language);
 
     if (!isMockQuoteResponse(result)) {
       return jsonError("Unable to generate a valid quote right now.", 502, rateLimitHeaders);

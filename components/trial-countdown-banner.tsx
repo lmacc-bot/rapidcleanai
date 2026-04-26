@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { GlowButton } from "@/components/glow-button";
+import { useLanguage } from "@/components/language-provider";
 import { MANAGE_BILLING_HREF, TRIAL_PERIOD_DAYS } from "@/lib/stripe";
+import type { Language } from "@/lib/translations";
 import { cn } from "@/lib/utils";
 
 const DAY_MS = 86_400_000;
@@ -40,7 +42,11 @@ function getDaysRemaining(trialEndMs: number | null, nowMs: number) {
   return Math.max(Math.ceil((trialEndMs - nowMs) / DAY_MS), 0);
 }
 
-function formatDayCount(days: number) {
+function formatDayCount(days: number, language: Language) {
+  if (language === "es") {
+    return `${days} dia${days === 1 ? "" : "s"}`;
+  }
+
   return `${days} day${days === 1 ? "" : "s"}`;
 }
 
@@ -48,16 +54,18 @@ export function TrialCountdownBanner({
   trialEndsAt,
   trialStartedAt,
 }: TrialCountdownBannerProps) {
+  const { language, t } = useLanguage();
   const [nowMs, setNowMs] = useState(() => Date.now());
   const trialEndMs = getTrialEndMs(trialEndsAt, trialStartedAt);
   const daysRemaining = getDaysRemaining(trialEndMs, nowMs);
   const isEndingSoon = typeof daysRemaining === "number" && daysRemaining <= 3;
+  const remainingSuffix = language === "es" ? "restantes." : "remaining.";
   const message =
     typeof daysRemaining === "number"
       ? isEndingSoon
-        ? `Your trial ends in ${formatDayCount(daysRemaining)}. Choose a plan to keep access.`
-        : `You're on a full-access trial. ${formatDayCount(daysRemaining)} remaining.`
-      : "You're on a full-access trial. Choose a plan to keep access.";
+        ? `${t("trial_banner_ending")} ${formatDayCount(daysRemaining, language)}. ${t("trial_banner_choose")}`
+        : `${t("trial_banner_default")} ${formatDayCount(daysRemaining, language)} ${remainingSuffix}`
+      : `${t("trial_banner_default")} ${t("trial_banner_choose")}`;
 
   useEffect(() => {
     const intervalId = window.setInterval(() => {
@@ -82,12 +90,12 @@ export function TrialCountdownBanner({
       <div>
         <p className="text-sm font-semibold">{message}</p>
         <p className={cn("mt-1 text-sm", isEndingSoon ? "text-amber-100" : "text-brand-text")}>
-          Keep your quote workflow moving without interruption.
+          {t("trial_banner_keep_moving")}
         </p>
       </div>
       <div className="shrink-0">
         <GlowButton href={MANAGE_BILLING_HREF} variant="secondary" trailingIcon={false}>
-          Manage Plan
+          {t("trial_banner_manage_plan")}
         </GlowButton>
       </div>
     </div>

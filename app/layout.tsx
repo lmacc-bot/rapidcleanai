@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { Manrope, Space_Grotesk } from "next/font/google";
 import "./globals.css";
+import { LanguageProvider } from "@/components/language-provider";
 import { cn } from "@/lib/utils";
 import { siteConfig } from "@/lib/site";
 
@@ -45,7 +46,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={cn(manrope.variable, spaceGrotesk.variable, "min-h-screen")}>
-        {children}
+        <LanguageProvider>{children}</LanguageProvider>
       </body>
     </html>
   );

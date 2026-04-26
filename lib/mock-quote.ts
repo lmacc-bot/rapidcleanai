@@ -1,3 +1,4 @@
+import { DEFAULT_LANGUAGE, type Language } from "@/lib/translations";
 import { sanitizePlainText } from "@/lib/validation";
 
 export type MockQuoteResponse = {
@@ -91,7 +92,10 @@ export function isMockQuoteResponse(value: unknown): value is MockQuoteResponse 
   );
 }
 
-export function createMockQuote(prompt: string): MockQuoteResponse {
+export function createMockQuote(
+  prompt: string,
+  language: Language = DEFAULT_LANGUAGE,
+): MockQuoteResponse {
   const sanitizedPrompt = sanitizePlainText(prompt, {
     maxLength: 2000,
     preserveNewlines: true,
@@ -119,11 +123,68 @@ export function createMockQuote(prompt: string): MockQuoteResponse {
   const high = low + (commercial ? 140 : 90);
   const recommended = Math.round((low + high) / 2);
 
-  const summary = commercial
-    ? "Commercial quote with moderate complexity and room for premium service positioning."
-    : deepClean
-      ? "Higher-effort residential scope that should be priced above a maintenance clean."
-      : "Standard residential request with room to move quickly and protect margin.";
+  const summary =
+    language === "es"
+      ? commercial
+        ? "Cotizacion comercial con complejidad moderada y espacio para posicionar servicio premium."
+        : deepClean
+          ? "Alcance residencial de mayor esfuerzo que debe cotizarse por encima de una limpieza de mantenimiento."
+          : "Solicitud residencial estandar con oportunidad de responder rapido y proteger margen."
+      : commercial
+        ? "Commercial quote with moderate complexity and room for premium service positioning."
+        : deepClean
+          ? "Higher-effort residential scope that should be priced above a maintenance clean."
+          : "Standard residential request with room to move quickly and protect margin.";
+  const scopeHighlights =
+    language === "es"
+      ? [
+          commercial
+            ? "El flujo comercial u oficina probablemente necesita una lista de revision."
+            : "El alcance residencial parece suficientemente claro para responder rapido.",
+          deepClean
+            ? "La mano de obra de limpieza profunda debe separarse del precio de mantenimiento."
+            : "El alcance estandar puede presentarse como una decision facil de reservar.",
+          rush
+            ? "La urgencia justifica un cargo premium por prioridad o misma semana."
+            : "La agenda normal permite mantener disciplina de precio.",
+        ]
+      : [
+          commercial
+            ? "Commercial or office workflow likely requires a walk-through checklist."
+            : "Residential scope appears straightforward enough for a fast turnaround.",
+          deepClean
+            ? "Deep-clean labor should be separated from standard recurring maintenance pricing."
+            : "Standard cleaning scope can be positioned as an easy booking decision.",
+          rush
+            ? "Rush timing justifies a same-week or priority scheduling premium."
+            : "Standard scheduling gives you room to preserve price discipline.",
+        ];
+  const fallbackUpsells =
+    language === "es"
+      ? ["Agregar ventanas interiores", "Ofrecer detalle de refrigerador u horno", "Sugerir servicio recurrente"]
+      : ["Add interior windows", "Offer fridge or oven detail", "Suggest recurring service follow-up"];
+  const localizedAddOns =
+    language === "es"
+      ? addOns.map((item) => {
+          if (item === "Inside fridge cleanout") {
+            return "Limpieza interior de refrigerador";
+          }
+
+          if (item === "Inside oven detail") {
+            return "Detalle interior de horno";
+          }
+
+          if (item === "Interior window detailing") {
+            return "Detalle de ventanas interiores";
+          }
+
+          if (item === "Laundry reset") {
+            return "Organizacion de lavanderia";
+          }
+
+          return item;
+        })
+      : addOns;
 
   return {
     requestId: createRequestId(),
@@ -137,21 +198,27 @@ export function createMockQuote(prompt: string): MockQuoteResponse {
       currency: "USD",
       cadence: "one-time",
     },
-    scopeHighlights: [
-      commercial ? "Commercial or office workflow likely requires a walk-through checklist." : "Residential scope appears straightforward enough for a fast turnaround.",
-      deepClean ? "Deep-clean labor should be separated from standard recurring maintenance pricing." : "Standard cleaning scope can be positioned as an easy booking decision.",
-      rush ? "Rush timing justifies a same-week or priority scheduling premium." : "Standard scheduling gives you room to preserve price discipline.",
-    ],
+    scopeHighlights,
     marginNote:
-      "Lead with value, set scope assumptions clearly, and avoid discounting before the customer pushes back.",
-    upsellSuggestions: addOns.length
-      ? addOns
-      : ["Add interior windows", "Offer fridge or oven detail", "Suggest recurring service follow-up"],
-    customerMessage: `Thanks for reaching out. Based on the scope you shared, a realistic price range is $${low}-$${high}, with a recommended quote of $${recommended}. That range assumes standard access, normal buildup, and the scope described. If you want, I can also outline optional add-ons or a recurring-service rate.`,
-    nextActions: [
-      "Confirm job size, access details, and preferred date.",
-      "Clarify any add-on services before finalizing the quote.",
-      "Send the customer-ready message while the lead is still warm.",
-    ],
+      language === "es"
+        ? "Lidera con valor, define claramente los supuestos del alcance y evita descuentos antes de que el cliente los pida."
+        : "Lead with value, set scope assumptions clearly, and avoid discounting before the customer pushes back.",
+    upsellSuggestions: localizedAddOns.length ? localizedAddOns : fallbackUpsells,
+    customerMessage:
+      language === "es"
+        ? `Gracias por contactarnos. Segun el alcance compartido, un rango realista es $${low}-$${high}, con una cotizacion recomendada de $${recommended}. Ese rango asume acceso estandar, acumulacion normal y el alcance descrito. Si quieres, tambien puedo detallar servicios opcionales o una tarifa recurrente.`
+        : `Thanks for reaching out. Based on the scope you shared, a realistic price range is $${low}-$${high}, with a recommended quote of $${recommended}. That range assumes standard access, normal buildup, and the scope described. If you want, I can also outline optional add-ons or a recurring-service rate.`,
+    nextActions:
+      language === "es"
+        ? [
+            "Confirmar tamano del trabajo, detalles de acceso y fecha preferida.",
+            "Aclarar servicios adicionales antes de finalizar la cotizacion.",
+            "Enviar el mensaje listo para el cliente mientras el lead sigue interesado.",
+          ]
+        : [
+            "Confirm job size, access details, and preferred date.",
+            "Clarify any add-on services before finalizing the quote.",
+            "Send the customer-ready message while the lead is still warm.",
+          ],
   };
 }

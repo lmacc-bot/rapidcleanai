@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { isMockQuoteResponse, type MockQuoteResponse } from "@/lib/mock-quote";
 import {
@@ -12,21 +12,23 @@ import {
 import { isBillingPlanId, MANAGE_BILLING_HREF } from "@/lib/stripe";
 import { validateChatPromptInput } from "@/lib/validation";
 import { ChatPanel, type ChatMessage } from "@/components/chat-panel";
+import { useLanguage, useT } from "@/components/language-provider";
 import { ResultsPanel } from "@/components/results-panel";
 import { Button } from "@/components/ui/button";
-
-const initialMessage: ChatMessage = {
-  id: "welcome",
-  role: "assistant",
-  content:
-    "Share the job details and I will generate a structured mock quote response for this MVP.",
-};
 
 const samplePrompts = [
   "Weekly office clean for 4,000 sq ft, 3 restrooms, 2 break rooms, quote needed this week.",
   "Move-out clean for a 2 bed / 2 bath apartment with inside oven and fridge.",
   "Deep clean for 2,100 sq ft home with pet hair, interior windows, and rush scheduling.",
 ];
+
+function buildInitialMessage(content: string): ChatMessage {
+  return {
+    id: "welcome",
+    role: "assistant",
+    content,
+  };
+}
 
 function buildCopyPayload(result: MockQuoteResponse) {
   return [
@@ -170,9 +172,11 @@ function QuoteLimitModal({
   usage: QuoteUsageSummary;
   onClose: () => void;
 }) {
+  const t = useT();
   const { used, limit } = getLimitModalUsage(payload, usage);
   const isStarter = payload.plan === "starter" || usage.selectedPlan === "starter";
   const usageLabel = typeof limit === "number" ? `${used}/${limit}` : `${used}/unlimited`;
+  const modalBody = t("upgrade_modal_body").replace("{usage}", usageLabel);
 
   return (
     <div
@@ -185,7 +189,7 @@ function QuoteLimitModal({
         <div className="rounded-3xl border border-brand-neon/20 bg-brand-neon/10 p-4">
           <p className="text-xs uppercase tracking-[0.18em] text-brand-neon">Upgrade recommended</p>
           <h2 id="quote-limit-title" className="mt-3 font-display text-3xl font-semibold text-white">
-            You&rsquo;ve reached your quote limit
+            {t("upgrade_modal_title")}
           </h2>
         </div>
 
@@ -197,22 +201,20 @@ function QuoteLimitModal({
           ) : null}
 
           <p>
-            You&rsquo;ve generated {usageLabel} quotes in your 24-hour window. Upgrade now to keep
-            generating quotes and close more jobs faster.
+            {modalBody}
           </p>
 
           {isStarter ? (
             <div className="rounded-2xl border border-brand-neon/25 bg-white/5 px-4 py-3">
-              <p className="text-xs uppercase tracking-[0.18em] text-brand-neon">Recommended</p>
+              <p className="text-xs uppercase tracking-[0.18em] text-brand-neon">{t("upgrade_modal_recommended")}</p>
               <p className="mt-1 font-medium text-white">
-                Pro is recommended for Starter teams that need more quote capacity and fewer
-                interruptions.
+                {t("upgrade_modal_starter")}
               </p>
             </div>
           ) : null}
 
           <p className="text-brand-muted">
-            Most users upgrade to Pro to avoid interruptions during busy days.
+            {t("upgrade_modal_urgency")}
           </p>
         </div>
 
@@ -221,10 +223,10 @@ function QuoteLimitModal({
             href={MANAGE_BILLING_HREF}
             className="inline-flex h-11 items-center justify-center rounded-xl bg-brand-neon px-5 text-sm font-semibold text-brand-bg shadow-glow transition hover:-translate-y-0.5"
           >
-            Upgrade to Pro
+            {t("upgrade_modal_cta")}
           </Link>
           <Button variant="secondary" type="button" onClick={onClose}>
-            Not now
+            {t("upgrade_modal_secondary")}
           </Button>
         </div>
       </div>
@@ -239,8 +241,11 @@ export function DashboardShell({
   initialUsage: QuoteUsageSummary;
   initialRecentQuotes: SavedQuoteSummary[];
 }) {
+  const { language, t } = useLanguage();
   const [prompt, setPrompt] = useState("");
-  const [messages, setMessages] = useState<ChatMessage[]>([initialMessage]);
+  const [messages, setMessages] = useState<ChatMessage[]>(() => [
+    buildInitialMessage(t("chat_welcome")),
+  ]);
   const [result, setResult] = useState<MockQuoteResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -250,6 +255,14 @@ export function DashboardShell({
   const [apiLimitError, setApiLimitError] = useState<QuoteApiErrorPayload | null>(null);
   const [quoteLimitModalError, setQuoteLimitModalError] = useState<QuoteApiErrorPayload | null>(null);
   const [exporting, setExporting] = useState(false);
+
+  useEffect(() => {
+    setMessages((current) =>
+      current.length === 1 && current[0]?.id === "welcome"
+        ? [buildInitialMessage(t("chat_welcome"))]
+        : current,
+    );
+  }, [t]);
 
   async function submitPrompt(value: string) {
     const parsedPrompt = validateChatPromptInput(value);
@@ -281,7 +294,7 @@ export function DashboardShell({
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ prompt: safePrompt }),
+        body: JSON.stringify({ prompt: safePrompt, language }),
         cache: "no-store",
         credentials: "same-origin",
       });
@@ -305,7 +318,7 @@ export function DashboardShell({
               {
                 id: `assistant-limit-${Date.now()}`,
                 role: "assistant",
-                content: "You have reached your quote limit. Upgrade in Billing to keep generating quotes.",
+                content: t("upgrade_modal_title"),
               },
             ]);
             return;
@@ -419,7 +432,7 @@ export function DashboardShell({
     setCopied(false);
     setErrorMessage(null);
     setQuoteLimitModalError(null);
-    setMessages([initialMessage]);
+    setMessages([buildInitialMessage(t("chat_welcome"))]);
   }
 
   function handleLimitReached() {
