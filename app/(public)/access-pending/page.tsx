@@ -27,18 +27,22 @@ function getSetupMessage(value: string | string[] | undefined) {
     ? "Your account was created, but we still need to finish access setup on our side. Please contact support if this does not update soon."
     : value === "checkout_unavailable"
       ? "We could not start Stripe checkout right now. Please try again in a moment."
+    : value === "trial_already_used"
+      ? "A free trial has already been used for this account. You can choose a paid plan to continue."
     : null;
 }
 
 export default async function AccessPendingPage({ searchParams }: AccessPendingPageProps) {
-  let selectedPlan = normalizeBillingPlan(undefined);
+  const params = searchParams ? await searchParams : {};
+  const trialAlreadyUsed = params.reason === "trial_already_used";
+  let selectedPlan = normalizeBillingPlan(params.plan);
 
   try {
     const { user } = await getServerUser();
 
     if (user) {
       const access = await getBillingAccessStatus(user.id);
-      selectedPlan = normalizeBillingPlan(access.plan);
+      selectedPlan = access.plan ? normalizeBillingPlan(access.plan) : selectedPlan;
 
       if (access.hasAccess) {
         redirect("/dashboard");
@@ -48,8 +52,9 @@ export default async function AccessPendingPage({ searchParams }: AccessPendingP
     // Keep this page reachable even if auth is temporarily unavailable.
   }
 
-  const params = searchParams ? await searchParams : {};
   const setupMessage = getSetupMessage(params.reason);
+  const checkoutOptions = trialAlreadyUsed ? { trial: false } : undefined;
+  const selectedPlanLabel = getBillingPlanLabel(selectedPlan);
 
   return (
     <div className="container flex min-h-[calc(100vh-10rem)] items-center py-12">
@@ -65,7 +70,9 @@ export default async function AccessPendingPage({ searchParams }: AccessPendingP
                 Your account was created successfully. Complete checkout to activate dashboard access.
               </p>
               <p className="max-w-2xl text-base leading-8 text-brand-muted">
-                Start a {TRIAL_PERIOD_DAYS}-day full-access trial now. RapidCleanAI unlocks Elite-level access during the trial, then keeps you on the plan you selected unless you downgrade later.
+                {trialAlreadyUsed
+                  ? "Choose the plan that fits your business and continue with full RapidCleanAI access."
+                  : `Start a ${TRIAL_PERIOD_DAYS}-day full-access trial now. RapidCleanAI unlocks Elite-level access during the trial, then keeps you on the plan you selected unless you downgrade later.`}
               </p>
             </div>
 
@@ -76,8 +83,8 @@ export default async function AccessPendingPage({ searchParams }: AccessPendingP
             ) : null}
 
             <div className="flex flex-wrap gap-3">
-              <GlowButton href={getCheckoutStartHref(selectedPlan)} trailingIcon={false}>
-                Start {getBillingPlanLabel(selectedPlan)} Trial
+              <GlowButton href={getCheckoutStartHref(selectedPlan, checkoutOptions)} trailingIcon={false}>
+                {trialAlreadyUsed ? `Start ${selectedPlanLabel} Plan` : `Start ${selectedPlanLabel} Trial`}
               </GlowButton>
               <GlowButton
                 href={`mailto:${siteConfig.pageSupportEmail}`}
@@ -103,11 +110,17 @@ export default async function AccessPendingPage({ searchParams }: AccessPendingP
           <div className="rounded-[2rem] border border-white/10 bg-white/6 p-6">
             <p className="text-xs uppercase tracking-[0.18em] text-brand-cyan">What happens next</p>
             <div className="mt-5 space-y-4 text-sm leading-7 text-brand-muted">
-              <p>Pick a plan and start your Stripe subscription checkout to unlock the full-access trial.</p>
               <p>
-                During the trial, every account gets Elite-level dashboard access even if you chose
-                Starter or Pro for post-trial billing.
+                {trialAlreadyUsed
+                  ? "Pick a plan and continue to checkout without another free trial."
+                  : "Pick a plan and start your Stripe subscription checkout to unlock the full-access trial."}
               </p>
+              {!trialAlreadyUsed ? (
+                <p>
+                  During the trial, every account gets Elite-level dashboard access even if you
+                  chose Starter or Pro for post-trial billing.
+                </p>
+              ) : null}
               <p>
                 After checkout, you can downgrade, upgrade, or cancel later in Stripe Billing
                 Portal without losing the option to stay subscribed.
@@ -150,8 +163,8 @@ export default async function AccessPendingPage({ searchParams }: AccessPendingP
                       </li>
                     ))}
                   </ul>
-                  <GlowButton href={getCheckoutStartHref(planId)} trailingIcon={false}>
-                    Start {plan.name} Trial
+                  <GlowButton href={getCheckoutStartHref(planId, checkoutOptions)} trailingIcon={false}>
+                    {trialAlreadyUsed ? `Start ${plan.name} Plan` : `Start ${plan.name} Trial`}
                   </GlowButton>
                 </CardContent>
               </Card>

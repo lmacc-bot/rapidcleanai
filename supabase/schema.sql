@@ -115,3 +115,27 @@ create index if not exists trial_tracking_ip_created_at_idx
 on public.trial_tracking (ip_address, created_at desc);
 
 alter table public.trial_tracking enable row level security;
+
+create extension if not exists pgcrypto;
+
+create table if not exists public.trial_claims (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references auth.users(id) on delete cascade,
+  email text not null,
+  normalized_email text not null,
+  ip_hash text,
+  user_agent_hash text,
+  stripe_customer_id text,
+  created_at timestamptz default now()
+);
+
+create unique index if not exists trial_claims_normalized_email_key
+on public.trial_claims (normalized_email);
+
+create index if not exists trial_claims_user_id_idx
+on public.trial_claims (user_id);
+
+create index if not exists trial_claims_stripe_customer_id_idx
+on public.trial_claims (stripe_customer_id);
+
+alter table public.trial_claims enable row level security;

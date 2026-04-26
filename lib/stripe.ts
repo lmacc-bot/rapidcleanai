@@ -120,6 +120,14 @@ export function formatBillingAiSpeed(speed: BillingAiSpeed) {
   return speed.charAt(0).toUpperCase() + speed.slice(1);
 }
 
-export function getCheckoutStartHref(plan: BillingPlanId) {
-  return `/checkout/start?plan=${plan}`;
+export function getCheckoutStartHref(plan: BillingPlanId, options?: { trial?: boolean }) {
+  const searchParams = new URLSearchParams({
+    plan,
+  });
+
+  if (options?.trial === false) {
+    searchParams.set("trial", "false");
+  }
+
+  return `/checkout/start?${searchParams.toString()}`;
 }

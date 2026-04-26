@@ -10,6 +10,7 @@ import {
   maskEmailForLogs,
   syncBillingAccessByEmail,
 } from "@/lib/stripe-billing";
+import { recordTrialClaim } from "@/lib/trial-claims";
 
 export const runtime = "nodejs";
 
@@ -74,6 +75,39 @@ async function applyBillingSnapshot(
   return jsonResponse({ received: true });
 }
 
+function getSessionUserId(session: Stripe.Checkout.Session) {
+  return session.client_reference_id || session.metadata?.supabase_user_id || null;
+}
+
+function getSessionCustomerId(session: Stripe.Checkout.Session) {
+  return typeof session.customer === "string" ? session.customer : session.customer?.id ?? null;
+}
+
+async function recordTrialClaimFromCheckoutSession(
+  session: Stripe.Checkout.Session,
+  snapshot: Awaited<ReturnType<typeof getBillingSnapshotFromSubscriptionId>>,
+  eventId: string,
+) {
+  if (snapshot?.paymentStatus !== "trialing" || !snapshot.email) {
+    return;
+  }
+
+  const result = await recordTrialClaim({
+    userId: getSessionUserId(session),
+    email: snapshot.email,
+    ipHash: session.metadata?.trial_ip_hash ?? null,
+    userAgentHash: session.metadata?.trial_user_agent_hash ?? null,
+    stripeCustomerId: getSessionCustomerId(session),
+  });
+
+  if (!result.success) {
+    console.error("[stripe webhook] Failed to record trial claim", {
+      eventId,
+      message: result.message,
+    });
+  }
+}
+
 export function OPTIONS() {
   return new NextResponse(null, {
     status: 204,
@@ -136,6 +170,7 @@ export async function POST(request: Request) {
 
       try {
         const snapshot = await getBillingSnapshotFromSubscriptionId(subscriptionId);
+        await recordTrialClaimFromCheckoutSession(session, snapshot, event.id);
         return applyBillingSnapshot(snapshot, event.type, event.id);
       } catch (error) {
         const message = error instanceof Error ? error.message : "Unknown checkout sync error";

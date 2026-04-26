@@ -45,6 +45,8 @@ type CreateCheckoutSessionInput = {
   fullName?: string | null;
   plan: BillingPlanId;
   allowTrial?: boolean;
+  trialIpHash?: string | null;
+  trialUserAgentHash?: string | null;
 };
 
 type CreateBillingPortalSessionResult =
@@ -326,6 +328,18 @@ export async function createCheckoutSessionForPlan(
   const siteUrl = getStableSiteUrl();
   const success_url = `${siteUrl}/checkout/success`;
   const cancel_url = `${siteUrl}/checkout/cancel`;
+  const metadata: Record<string, string> = {
+    selected_plan: input.plan,
+    supabase_user_id: input.userId,
+  };
+
+  if (input.trialIpHash) {
+    metadata.trial_ip_hash = input.trialIpHash;
+  }
+
+  if (input.trialUserAgentHash) {
+    metadata.trial_user_agent_hash = input.trialUserAgentHash;
+  }
 
   console.log("[checkout] success_url:", success_url);
 
@@ -342,16 +356,10 @@ export async function createCheckoutSessionForPlan(
         quantity: 1,
       },
     ],
-    metadata: {
-      selected_plan: input.plan,
-      supabase_user_id: input.userId,
-    },
+    metadata,
     subscription_data: {
       trial_period_days: input.allowTrial === false ? undefined : TRIAL_PERIOD_DAYS,
-      metadata: {
-        selected_plan: input.plan,
-        supabase_user_id: input.userId,
-      },
+      metadata,
     },
   });
 

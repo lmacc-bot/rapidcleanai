@@ -1,9 +1,11 @@
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { createCheckoutSessionForPlan, getStripeSubscriptionSummaryByEmail } from "@/lib/stripe-billing";
 import { getBillingAccessStatus } from "@/lib/supabase/access";
 import { getServerUser } from "@/lib/supabase/auth";
 import { getCheckoutStartHref, normalizeBillingPlan, type BillingPlanId } from "@/lib/stripe";
 import { getStripePriceEnvPresence } from "@/lib/stripe-server";
+import { getTrialClaimFingerprint, hasTrialClaimForEmail } from "@/lib/trial-claims";
 
 type CheckoutStartPageProps = {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
@@ -21,6 +23,10 @@ function readStripePriceIdForLogs(plan: BillingPlanId) {
   return process.env.STRIPE_PRO_PRICE_ID?.trim() || null;
 }
 
+function isPaidCheckoutRequested(value: string | string[] | undefined) {
+  return value === "false" || value === "0" || value === "no";
+}
+
 export default async function CheckoutStartPage({ searchParams }: CheckoutStartPageProps) {
   const params = searchParams ? await searchParams : {};
   const rawPlan = typeof params.plan === "string" ? params.plan : undefined;
@@ -28,11 +34,15 @@ export default async function CheckoutStartPage({ searchParams }: CheckoutStartP
   const redirectPath = getCheckoutStartHref(selectedPlan);
   const priceEnvPresence = getStripePriceEnvPresence();
   const selectedPriceId = readStripePriceIdForLogs(selectedPlan);
+  const paidCheckoutRequested = isPaidCheckoutRequested(params.trial);
+  const requestHeaders = await headers();
+  const trialFingerprint = getTrialClaimFingerprint(requestHeaders);
 
   console.log("[checkout/start] Checkout plan requested", {
     rawPlan: rawPlan ?? "missing",
     selectedPlan,
     defaultedToPro: selectedPlan === "pro" && rawPlan !== "pro",
+    paidCheckoutRequested,
   });
   console.log("[checkout/start] Stripe price env presence", {
     STRIPE_STARTER_PRICE_ID: priceEnvPresence.starter,
@@ -63,6 +73,30 @@ export default async function CheckoutStartPage({ searchParams }: CheckoutStartP
     redirect("/billing/manage");
   }
 
+  let allowTrial = access.paymentStatus !== "no_trial" && !paidCheckoutRequested;
+
+  if (allowTrial) {
+    let trialAlreadyClaimed = false;
+
+    try {
+      trialAlreadyClaimed = await hasTrialClaimForEmail(user.email);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unknown trial claim check error";
+      console.error("[checkout/start] Trial claim check failed; starting paid checkout without trial", {
+        message,
+        selectedPlan,
+      });
+      allowTrial = false;
+    }
+
+    if (trialAlreadyClaimed) {
+      console.warn("[checkout/start] Trial checkout blocked because a trial claim already exists", {
+        selectedPlan,
+      });
+      redirect(`/access-pending?reason=trial_already_used&plan=${selectedPlan}`);
+    }
+  }
+
   let checkoutSession: Awaited<ReturnType<typeof createCheckoutSessionForPlan>>;
 
   try {
@@ -72,7 +106,9 @@ export default async function CheckoutStartPage({ searchParams }: CheckoutStartP
       fullName:
         typeof user.user_metadata.full_name === "string" ? user.user_metadata.full_name : undefined,
       plan: selectedPlan,
-      allowTrial: access.paymentStatus !== "no_trial",
+      allowTrial,
+      trialIpHash: trialFingerprint.ipHash,
+      trialUserAgentHash: trialFingerprint.userAgentHash,
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown checkout error";
