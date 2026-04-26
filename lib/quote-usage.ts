@@ -64,6 +64,11 @@ type QuoteWorkspaceSnapshotOptions = {
   onReadFailure?: "default" | "throw";
 };
 
+type RecordGeneratedQuoteResult = {
+  usage: QuoteUsageSummary;
+  savedQuoteId: number | null;
+};
+
 // Each function creates its own admin Supabase client when accessing
 // quote_usage_windows or saved_quotes rather than receiving a client as a parameter.
 
@@ -465,21 +470,31 @@ export async function recordGeneratedQuote(input: {
   prompt: string;
   quote: MockQuoteResponse;
   plan: EffectiveQuotePlan;
-}): Promise<QuoteUsageSummary> {
+}): Promise<RecordGeneratedQuoteResult> {
   const supabase = createAdminSupabaseClient();
   const activeWindow = await getActiveUsageWindow(input.userId);
   const nextQuotesUsed = activeWindow.quotesUsed + 1;
   const nowIso = getNowIso();
+  let savedQuoteId: number | null = null;
 
-  const { error: insertError } = await supabase.from("saved_quotes").insert({
-    user_id: input.userId,
-    prompt: input.prompt,
-    quote_payload: input.quote,
-    plan_at_generation: input.plan.effectivePlan,
-  });
+  const { data: insertedQuote, error: insertError } = await supabase
+    .from("saved_quotes")
+    .insert({
+      user_id: input.userId,
+      prompt: input.prompt,
+      quote_payload: input.quote,
+      plan_at_generation: input.plan.effectivePlan,
+    })
+    .select("id")
+    .maybeSingle();
 
   if (insertError) {
     logQuoteUsageFailure("Failed to persist saved quote after generation.", insertError.message);
+  } else if (insertedQuote && typeof insertedQuote.id === "number") {
+    savedQuoteId = insertedQuote.id;
+  } else if (insertedQuote && typeof insertedQuote.id === "string" && /^\d+$/.test(insertedQuote.id)) {
+    const parsedId = Number(insertedQuote.id);
+    savedQuoteId = Number.isSafeInteger(parsedId) ? parsedId : null;
   }
 
   const { error: updateError } = await supabase.from("quote_usage_windows").upsert(
@@ -516,7 +531,10 @@ export async function recordGeneratedQuote(input: {
     logQuoteUsageFailure("Failed to refresh saved quote counts after generation.", error);
   }
 
-  return buildQuoteUsageSummary(input.plan, refreshedUsageWindow, savedCounts);
+  return {
+    usage: buildQuoteUsageSummary(input.plan, refreshedUsageWindow, savedCounts),
+    savedQuoteId,
+  };
 }
 
 export async function getExportableQuotes(userId: string): Promise<

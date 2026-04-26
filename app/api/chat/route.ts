@@ -244,17 +244,21 @@ export async function POST(request: Request) {
       return jsonError("Unable to generate a valid quote right now.", 502, rateLimitHeaders);
     }
 
-    const updatedUsage = await recordGeneratedQuote({
+    const recordedQuote = await recordGeneratedQuote({
       userId,
       prompt: parsedPrompt.data,
       quote: result,
       plan: quoteAllowance.plan,
     });
+    const responseBody = {
+      ...result,
+      savedQuoteId: recordedQuote.savedQuoteId,
+    };
 
-    return NextResponse.json(result, {
+    return NextResponse.json(responseBody, {
       headers: buildNoStoreHeaders({
         ...rateLimitHeaders,
-        ...buildQuoteUsageHeaders(updatedUsage),
+        ...buildQuoteUsageHeaders(recordedQuote.usage),
         Vary: "Cookie",
       }),
     });

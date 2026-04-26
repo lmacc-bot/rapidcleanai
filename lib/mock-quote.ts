@@ -25,6 +25,7 @@ export type MockQuoteResponse = {
   upsellSuggestions: string[];
   customerMessage: string;
   nextActions: string[];
+  savedQuoteId?: number | null;
   estimatedLaborHours?: {
     low: number;
     high: number;
@@ -129,6 +130,14 @@ function hasValidOptionalQuoteEngineFields(candidate: Partial<MockQuoteResponse>
     ) {
       return false;
     }
+  }
+
+  if (
+    candidate.savedQuoteId !== undefined &&
+    candidate.savedQuoteId !== null &&
+    !isFiniteNumber(candidate.savedQuoteId)
+  ) {
+    return false;
   }
 
   if (

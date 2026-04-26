@@ -15,6 +15,7 @@ import { ChatPanel, type ChatMessage } from "@/components/chat-panel";
 import { useLanguage, useT } from "@/components/language-provider";
 import { ResultsPanel } from "@/components/results-panel";
 import { Button } from "@/components/ui/button";
+import { isProposalPayload, type ProposalPayload } from "@/lib/proposal-types";
 import type { TranslationKey } from "@/lib/translations";
 
 function buildInitialMessage(content: string): ChatMessage {
@@ -42,8 +43,66 @@ function buildCopyPayload(result: MockQuoteResponse, t: Translator) {
   ].join("\n");
 }
 
+function buildProposalHtml(proposal: ProposalPayload, t: Translator) {
+  const escapeHtml = (value: string | number | null) =>
+    String(value ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  const lineItems = proposal.line_items
+    .map((item) => `<li><strong>${escapeHtml(item.label)}</strong>: $${escapeHtml(item.price)}</li>`)
+    .join("");
+  const upsells = proposal.upsells
+    .map((item) => `<li><strong>${escapeHtml(item.label)}</strong>: $${escapeHtml(item.price)}</li>`)
+    .join("");
+  const terms = proposal.terms.map((term) => `<li>${escapeHtml(term)}</li>`).join("");
+
+  return `<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>${escapeHtml(proposal.subject)}</title>
+  <style>
+    body { font-family: Arial, sans-serif; color: #111827; line-height: 1.55; padding: 32px; }
+    h1 { font-size: 26px; margin-bottom: 8px; }
+    h2 { font-size: 16px; margin-top: 24px; }
+    .message { white-space: pre-wrap; border: 1px solid #d1d5db; border-radius: 14px; padding: 18px; }
+    .total { font-size: 20px; font-weight: 700; }
+  </style>
+</head>
+<body>
+  <h1>${escapeHtml(proposal.subject)}</h1>
+  <p class="total">${escapeHtml(t("proposal_total_price"))}: $${escapeHtml(proposal.total_price)}</p>
+  <p>${escapeHtml(t("proposal_estimated_hours"))}: ${
+    proposal.estimated_hours === null
+      ? escapeHtml(t("proposal_hours_unknown"))
+      : `${escapeHtml(proposal.estimated_hours)} ${escapeHtml(t("proposal_hours_suffix"))}`
+  }</p>
+  <h2>${escapeHtml(t("proposal_line_items"))}</h2>
+  <ul>${lineItems}</ul>
+  <h2>${escapeHtml(t("proposal_optional_addons"))}</h2>
+  <ul>${upsells || `<li>${escapeHtml(t("proposal_none"))}</li>`}</ul>
+  <h2>${escapeHtml(t("proposal_terms"))}</h2>
+  <ul>${terms}</ul>
+  <h2>Message</h2>
+  <div class="message">${escapeHtml(proposal.message_text)}</div>
+  <script>window.addEventListener("load", () => window.print());</script>
+</body>
+</html>`;
+}
+
 function getApiErrorMessage(payload: unknown, t: Translator) {
   if (isQuoteApiErrorPayload(payload)) {
+    return payload.error;
+  }
+
+  if (
+    payload &&
+    typeof payload === "object" &&
+    "error" in payload &&
+    typeof payload.error === "string"
+  ) {
     return payload.error;
   }
 
@@ -107,7 +166,7 @@ function getUsageFromHeaders(headers: Headers, current: QuoteUsageSummary): Quot
 
 function buildSavedQuoteSummary(result: MockQuoteResponse, usage: QuoteUsageSummary): SavedQuoteSummary {
   return {
-    id: Date.now(),
+    id: result.savedQuoteId ?? Date.now(),
     prompt: result.prompt,
     createdAt: result.generatedAt,
     requestId: result.requestId,
@@ -231,6 +290,123 @@ function QuoteLimitModal({
   );
 }
 
+function ProposalPreviewModal({
+  proposal,
+  copied,
+  emailNotice,
+  onClose,
+  onCopy,
+  onDownloadPdf,
+  onSendEmail,
+}: {
+  proposal: ProposalPayload;
+  copied: boolean;
+  emailNotice: string | null;
+  onClose: () => void;
+  onCopy: () => void;
+  onDownloadPdf: () => void;
+  onSendEmail: () => void;
+}) {
+  const t = useT();
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-brand-bg/80 px-4 py-8 backdrop-blur-md"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="proposal-preview-title"
+    >
+      <div className="max-h-[92vh] w-full max-w-4xl overflow-auto rounded-3xl border border-white/12 bg-brand-surface p-6 shadow-[0_24px_90px_rgba(0,0,0,0.46)]">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <p className="text-xs uppercase tracking-[0.18em] text-brand-neon">
+              {t("proposal_modal_title")}
+            </p>
+            <h2 id="proposal-preview-title" className="mt-3 font-display text-3xl font-semibold text-white">
+              {proposal.subject}
+            </h2>
+            <p className="mt-2 text-sm leading-7 text-brand-muted">
+              {t("proposal_modal_description")}
+            </p>
+          </div>
+          <Button type="button" variant="secondary" onClick={onClose}>
+            {t("proposal_close")}
+          </Button>
+        </div>
+
+        <div className="mt-6 grid gap-4 lg:grid-cols-[1fr_0.9fr]">
+          <div className="rounded-3xl border border-white/10 bg-[rgba(11,15,20,0.62)] p-5">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <p className="text-sm font-semibold text-white">{t("proposal_total_price")}</p>
+              <p className="font-display text-3xl text-brand-neon">${proposal.total_price}</p>
+            </div>
+            <p className="mt-2 text-sm text-brand-muted">
+              {t("proposal_estimated_hours")}:{" "}
+              {proposal.estimated_hours === null
+                ? t("proposal_hours_unknown")
+                : `${proposal.estimated_hours} ${t("proposal_hours_suffix")}`}
+            </p>
+            <pre className="mt-5 whitespace-pre-wrap rounded-2xl border border-white/10 bg-white/5 p-4 text-sm leading-7 text-brand-text">
+              {proposal.message_text}
+            </pre>
+          </div>
+
+          <div className="space-y-4">
+            <div className="rounded-3xl border border-white/10 bg-white/5 p-5">
+              <h3 className="font-display text-xl text-white">{t("proposal_line_items")}</h3>
+              <ul className="mt-4 space-y-3 text-sm text-brand-muted">
+                {proposal.line_items.map((item) => (
+                  <li key={`${item.label}-${item.price}`} className="flex justify-between gap-3">
+                    <span>{item.label}</span>
+                    <span className="text-white">${item.price}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div className="rounded-3xl border border-white/10 bg-white/5 p-5">
+              <h3 className="font-display text-xl text-white">{t("proposal_optional_addons")}</h3>
+              <ul className="mt-4 space-y-3 text-sm text-brand-muted">
+                {proposal.upsells.map((item) => (
+                  <li key={`${item.label}-${item.price}`} className="flex justify-between gap-3">
+                    <span>{item.label}</span>
+                    <span className="text-white">${item.price}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div className="rounded-3xl border border-white/10 bg-white/5 p-5">
+              <h3 className="font-display text-xl text-white">{t("proposal_terms")}</h3>
+              <ul className="mt-4 space-y-3 text-sm leading-7 text-brand-muted">
+                {proposal.terms.map((term) => (
+                  <li key={term}>- {term}</li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        {emailNotice ? (
+          <p className="mt-5 rounded-2xl border border-brand-cyan/20 bg-brand-cyan/10 px-4 py-3 text-sm text-brand-text">
+            {emailNotice}
+          </p>
+        ) : null}
+
+        <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-end">
+          <Button type="button" onClick={onCopy}>
+            {copied ? t("proposal_copied") : t("proposal_copy_text")}
+          </Button>
+          <Button type="button" variant="secondary" onClick={onDownloadPdf}>
+            {t("proposal_download_pdf")}
+          </Button>
+          <Button type="button" variant="secondary" onClick={onSendEmail}>
+            {t("proposal_send_email")}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function DashboardShell({
   initialUsage,
   initialRecentQuotes,
@@ -252,6 +428,10 @@ export function DashboardShell({
   const [apiLimitError, setApiLimitError] = useState<QuoteApiErrorPayload | null>(null);
   const [quoteLimitModalError, setQuoteLimitModalError] = useState<QuoteApiErrorPayload | null>(null);
   const [exporting, setExporting] = useState(false);
+  const [proposal, setProposal] = useState<ProposalPayload | null>(null);
+  const [proposalLoading, setProposalLoading] = useState(false);
+  const [proposalCopied, setProposalCopied] = useState(false);
+  const [proposalEmailNotice, setProposalEmailNotice] = useState<string | null>(null);
   const samplePrompts = [
     t("chat_sample_prompt_office"),
     t("chat_sample_prompt_moveout"),
@@ -410,6 +590,50 @@ export function DashboardShell({
     }
   }
 
+  async function handleCreateProposal(savedQuoteId: number | null | undefined) {
+    if (!savedQuoteId) {
+      setErrorMessage(t("proposal_saved_quote_required"));
+      return;
+    }
+
+    setProposalLoading(true);
+    setErrorMessage(null);
+    setProposalCopied(false);
+    setProposalEmailNotice(null);
+
+    try {
+      const response = await fetch("/api/proposals/generate", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          saved_quote_id: savedQuoteId,
+          language,
+        }),
+        cache: "no-store",
+        credentials: "same-origin",
+      });
+      const payload = (await response.json().catch(() => null)) as unknown;
+
+      if (!response.ok) {
+        throw new Error(getApiErrorMessage(payload, t));
+      }
+
+      if (!isProposalPayload(payload)) {
+        throw new Error(t("proposal_generation_failed"));
+      }
+
+      setProposal(payload);
+    } catch (error) {
+      setErrorMessage(
+        error instanceof Error ? error.message : t("proposal_generation_failed"),
+      );
+    } finally {
+      setProposalLoading(false);
+    }
+  }
+
   async function handleCopy() {
     if (!result || typeof navigator === "undefined") {
       return;
@@ -423,12 +647,44 @@ export function DashboardShell({
     }
   }
 
+  async function handleCopyProposal() {
+    if (!proposal || typeof navigator === "undefined") {
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(proposal.message_text);
+      setProposalCopied(true);
+    } catch {
+      setProposalCopied(false);
+    }
+  }
+
+  function handleDownloadProposalPdf() {
+    if (!proposal || typeof window === "undefined") {
+      return;
+    }
+
+    const popup = window.open("", "_blank");
+    if (!popup) {
+      return;
+    }
+
+    popup.document.write(buildProposalHtml(proposal, t));
+    popup.document.close();
+  }
+
+  function handleSendProposalEmail() {
+    setProposalEmailNotice(t("proposal_email_stub"));
+  }
+
   function handleNewQuote() {
     setPrompt("");
     setResult(null);
     setCopied(false);
     setErrorMessage(null);
     setQuoteLimitModalError(null);
+    setProposal(null);
   }
 
   function handleClear() {
@@ -437,6 +693,7 @@ export function DashboardShell({
     setCopied(false);
     setErrorMessage(null);
     setQuoteLimitModalError(null);
+    setProposal(null);
     setMessages([buildInitialMessage(t("chat_welcome"))]);
   }
 
@@ -474,6 +731,8 @@ export function DashboardShell({
           onCopy={handleCopy}
           onClear={handleClear}
           onExport={handleExport}
+          onCreateProposal={handleCreateProposal}
+          proposalLoading={proposalLoading}
         />
       </div>
 
@@ -482,6 +741,18 @@ export function DashboardShell({
           payload={quoteLimitModalError}
           usage={usage}
           onClose={() => setQuoteLimitModalError(null)}
+        />
+      ) : null}
+
+      {proposal ? (
+        <ProposalPreviewModal
+          proposal={proposal}
+          copied={proposalCopied}
+          emailNotice={proposalEmailNotice}
+          onClose={() => setProposal(null)}
+          onCopy={handleCopyProposal}
+          onDownloadPdf={handleDownloadProposalPdf}
+          onSendEmail={handleSendProposalEmail}
         />
       ) : null}
     </>

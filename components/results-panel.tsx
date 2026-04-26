@@ -20,10 +20,12 @@ type ResultsPanelProps = {
   recentQuotes: SavedQuoteSummary[];
   apiLimitError: QuoteApiErrorPayload | null;
   exporting: boolean;
+  proposalLoading: boolean;
   onNewQuote: () => void;
   onCopy: () => void;
   onClear: () => void;
   onExport: () => Promise<void> | void;
+  onCreateProposal: (savedQuoteId: number | null | undefined) => Promise<void> | void;
 };
 
 const money = new Intl.NumberFormat("en-US", {
@@ -129,10 +131,12 @@ export function ResultsPanel({
   recentQuotes,
   apiLimitError,
   exporting,
+  proposalLoading,
   onNewQuote,
   onCopy,
   onClear,
   onExport,
+  onCreateProposal,
 }: ResultsPanelProps) {
   const { language, t } = useLanguage();
   const upgradePrompt = getUpgradePrompt(usage, apiLimitError, t);
@@ -153,6 +157,17 @@ export function ResultsPanel({
             <Button variant="secondary" size="sm" type="button" onClick={onCopy} disabled={!result}>
               <Copy className="size-4" />
               {copied ? t("results_copied") : t("results_copy")}
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              type="button"
+              onClick={() => onCreateProposal(result?.savedQuoteId)}
+              disabled={!result?.savedQuoteId || proposalLoading}
+              title={!result?.savedQuoteId ? t("proposal_saved_quote_required") : undefined}
+            >
+              <Sparkles className="size-4" />
+              {proposalLoading ? t("results_creating_proposal") : t("results_create_proposal")}
             </Button>
             <Button
               variant="secondary"
