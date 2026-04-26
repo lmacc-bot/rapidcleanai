@@ -1,6 +1,10 @@
 import "server-only";
 
-import type { MockQuoteResponse, QuoteBreakdownLineItem } from "@/lib/mock-quote";
+import type {
+  MockQuoteResponse,
+  QuoteBreakdownLineItem,
+  QuoteOptionalAddOn,
+} from "@/lib/mock-quote";
 import type { ProposalLineItem, ProposalPayload } from "@/lib/proposal-types";
 import type { Language } from "@/lib/translations";
 
@@ -22,6 +26,10 @@ function midpoint(lineItem: QuoteBreakdownLineItem) {
   return Math.round((lineItem.low + lineItem.high) / 2);
 }
 
+function midpointRange(low: number, high: number) {
+  return Math.round((low + high) / 2);
+}
+
 function buildLineItems(quote: MockQuoteResponse, language: Language) {
   if (quote.breakdownLineItems?.length) {
     return quote.breakdownLineItems.map((item) => ({
@@ -40,17 +48,93 @@ function buildLineItems(quote: MockQuoteResponse, language: Language) {
   ];
 }
 
-function buildUpsells(quote: MockQuoteResponse, language: Language) {
-  const fallbackPrice = 35;
+function mapOptionalAddOn(addOn: QuoteOptionalAddOn): ProposalLineItem {
+  return {
+    label: addOn.label,
+    price: addOn.recommended,
+    description: [addOn.description, addOn.note].filter(Boolean).join(" "),
+  };
+}
 
-  return quote.upsellSuggestions.slice(0, 4).map((suggestion, index) => ({
+function buildFallbackUpsell(
+  suggestion: string,
+  quote: MockQuoteResponse,
+  language: Language,
+): ProposalLineItem {
+  const normalized = suggestion.toLowerCase();
+  const standardBase =
+    quote.standardCleanEstimate?.recommended ?? quote.recommendedEstimate.recommended;
+
+  if (normalized.includes("recurring") || normalized.includes("recurrente") || normalized.includes("mantenimiento")) {
+    const low = Math.max(Math.round(standardBase * 0.55), 120);
+    const high = Math.max(Math.round(standardBase * 0.7), low + 10);
+
+    return {
+      label: language === "es" ? "Mantenimiento semanal" : "Weekly maintenance",
+      price: midpointRange(low, high),
+      description:
+        language === "es"
+          ? `Mantenimiento recurrente desde ${money.format(low)} por visita despues de la limpieza inicial.`
+          : `Recurring maintenance starting at ${money.format(low)} per visit after initial clean.`,
+    };
+  }
+
+  if (normalized.includes("fridge") || normalized.includes("refrigerador") || normalized.includes("nevera")) {
+    return {
+      label: language === "es" ? "Extra de refrigerador" : "Inside fridge add-on",
+      price: 40,
+      description:
+        language === "es"
+          ? "Rango sugerido: $30-$45."
+          : "Suggested range: $30-$45.",
+    };
+  }
+
+  if (normalized.includes("oven") || normalized.includes("horno")) {
+    return {
+      label: language === "es" ? "Extra de horno" : "Inside oven add-on",
+      price: 45,
+      description:
+        language === "es"
+          ? "Rango sugerido: $35-$55."
+          : "Suggested range: $35-$55.",
+    };
+  }
+
+  if (normalized.includes("pet") || normalized.includes("mascota")) {
+    const low = Math.max(Math.round(standardBase * 0.1), 35);
+    const high = Math.max(Math.round(standardBase * 0.15), low + 10);
+
+    return {
+      label: language === "es" ? "Cargo por pelo de mascota" : "Pet hair fee",
+      price: midpointRange(low, high),
+      description:
+        language === "es"
+          ? `Rango sugerido: ${money.format(low)}-${money.format(high)}.`
+          : `Suggested range: ${money.format(low)}-${money.format(high)}.`,
+    };
+  }
+
+  const fallback = Math.max(Math.round(quote.recommendedEstimate.recommended * 0.12), 50);
+
+  return {
     label: suggestion,
-    price: index === 0 ? fallbackPrice : fallbackPrice + index * 10,
+    price: fallback,
     description:
       language === "es"
-        ? "Opcional; confirmar antes de agregar al total."
+        ? "Opcional; confirmar alcance y precio antes de agregar al total."
         : "Optional; confirm before adding to the total.",
-  }));
+  };
+}
+
+function buildUpsells(quote: MockQuoteResponse, language: Language) {
+  if (quote.optionalAddOns?.length) {
+    return quote.optionalAddOns.map(mapOptionalAddOn);
+  }
+
+  return quote.upsellSuggestions
+    .slice(0, 4)
+    .map((suggestion) => buildFallbackUpsell(suggestion, quote, language));
 }
 
 function formatLineItems(lineItems: ProposalLineItem[]) {
@@ -62,7 +146,12 @@ function formatUpsells(upsells: ProposalLineItem[], language: Language) {
     return language === "es" ? "- Ninguno por ahora" : "- None right now";
   }
 
-  return upsells.map((item) => `- ${item.label}: ${money.format(item.price)}`).join("\n");
+  return upsells
+    .map((item) => {
+      const description = item.description ? ` - ${item.description}` : "";
+      return `- ${item.label}: ${money.format(item.price)}${description}`;
+    })
+    .join("\n");
 }
 
 function buildTerms(language: Language) {

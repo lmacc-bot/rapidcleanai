@@ -51,10 +51,16 @@ function buildProposalHtml(proposal: ProposalPayload, t: Translator) {
       .replace(/>/g, "&gt;")
       .replace(/"/g, "&quot;");
   const lineItems = proposal.line_items
-    .map((item) => `<li><strong>${escapeHtml(item.label)}</strong>: $${escapeHtml(item.price)}</li>`)
+    .map((item) => {
+      const description = item.description ? ` ${escapeHtml(item.description)}` : "";
+      return `<li><strong>${escapeHtml(item.label)}</strong>: $${escapeHtml(item.price)}${description}</li>`;
+    })
     .join("");
   const upsells = proposal.upsells
-    .map((item) => `<li><strong>${escapeHtml(item.label)}</strong>: $${escapeHtml(item.price)}</li>`)
+    .map((item) => {
+      const description = item.description ? ` ${escapeHtml(item.description)}` : "";
+      return `<li><strong>${escapeHtml(item.label)}</strong>: $${escapeHtml(item.price)}${description}</li>`;
+    })
     .join("");
   const terms = proposal.terms.map((term) => `<li>${escapeHtml(term)}</li>`).join("");
 
@@ -356,9 +362,14 @@ function ProposalPreviewModal({
               <h3 className="font-display text-xl text-white">{t("proposal_line_items")}</h3>
               <ul className="mt-4 space-y-3 text-sm text-brand-muted">
                 {proposal.line_items.map((item) => (
-                  <li key={`${item.label}-${item.price}`} className="flex justify-between gap-3">
-                    <span>{item.label}</span>
-                    <span className="text-white">${item.price}</span>
+                  <li key={`${item.label}-${item.price}`}>
+                    <div className="flex justify-between gap-3">
+                      <span>{item.label}</span>
+                      <span className="text-white">${item.price}</span>
+                    </div>
+                    {item.description ? (
+                      <p className="mt-1 text-xs leading-6 text-brand-muted">{item.description}</p>
+                    ) : null}
                   </li>
                 ))}
               </ul>
@@ -367,9 +378,14 @@ function ProposalPreviewModal({
               <h3 className="font-display text-xl text-white">{t("proposal_optional_addons")}</h3>
               <ul className="mt-4 space-y-3 text-sm text-brand-muted">
                 {proposal.upsells.map((item) => (
-                  <li key={`${item.label}-${item.price}`} className="flex justify-between gap-3">
-                    <span>{item.label}</span>
-                    <span className="text-white">${item.price}</span>
+                  <li key={`${item.label}-${item.price}`}>
+                    <div className="flex justify-between gap-3">
+                      <span>{item.label}</span>
+                      <span className="text-white">${item.price}</span>
+                    </div>
+                    {item.description ? (
+                      <p className="mt-1 text-xs leading-6 text-brand-muted">{item.description}</p>
+                    ) : null}
                   </li>
                 ))}
               </ul>

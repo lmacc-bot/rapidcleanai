@@ -8,12 +8,28 @@ export type QuoteBreakdownLineItem = {
   note?: string;
 };
 
+export type QuoteOptionalAddOn = {
+  label: string;
+  low: number;
+  high: number;
+  recommended: number;
+  description?: string;
+  note?: string;
+};
+
 export type MockQuoteResponse = {
   requestId: string;
   generatedAt: string;
   prompt: string;
   summary: string;
   recommendedEstimate: {
+    low: number;
+    high: number;
+    recommended: number;
+    currency: "USD";
+    cadence: "one-time";
+  };
+  standardCleanEstimate?: {
     low: number;
     high: number;
     recommended: number;
@@ -32,6 +48,7 @@ export type MockQuoteResponse = {
     recommended: number;
   };
   breakdownLineItems?: QuoteBreakdownLineItem[];
+  optionalAddOns?: QuoteOptionalAddOn[];
   assumptions?: string[];
   detectedAddress?: string | null;
   propertyDataResolved?: boolean;
@@ -119,7 +136,38 @@ function isQuoteBreakdownLineItem(value: unknown): value is QuoteBreakdownLineIt
   );
 }
 
+function isQuoteOptionalAddOn(value: unknown): value is QuoteOptionalAddOn {
+  if (!value || typeof value !== "object") {
+    return false;
+  }
+
+  const candidate = value as Partial<QuoteOptionalAddOn>;
+
+  return (
+    typeof candidate.label === "string" &&
+    isFiniteNumber(candidate.low) &&
+    isFiniteNumber(candidate.high) &&
+    isFiniteNumber(candidate.recommended) &&
+    (candidate.description === undefined || typeof candidate.description === "string") &&
+    (candidate.note === undefined || typeof candidate.note === "string")
+  );
+}
+
 function hasValidOptionalQuoteEngineFields(candidate: Partial<MockQuoteResponse>) {
+  if (candidate.standardCleanEstimate !== undefined) {
+    if (
+      candidate.standardCleanEstimate === null ||
+      typeof candidate.standardCleanEstimate !== "object" ||
+      !isFiniteNumber(candidate.standardCleanEstimate.low) ||
+      !isFiniteNumber(candidate.standardCleanEstimate.high) ||
+      !isFiniteNumber(candidate.standardCleanEstimate.recommended) ||
+      candidate.standardCleanEstimate.currency !== "USD" ||
+      candidate.standardCleanEstimate.cadence !== "one-time"
+    ) {
+      return false;
+    }
+  }
+
   if (candidate.estimatedLaborHours !== undefined) {
     if (
       candidate.estimatedLaborHours === null ||
@@ -144,6 +192,14 @@ function hasValidOptionalQuoteEngineFields(candidate: Partial<MockQuoteResponse>
     candidate.breakdownLineItems !== undefined &&
     (!Array.isArray(candidate.breakdownLineItems) ||
       !candidate.breakdownLineItems.every(isQuoteBreakdownLineItem))
+  ) {
+    return false;
+  }
+
+  if (
+    candidate.optionalAddOns !== undefined &&
+    (!Array.isArray(candidate.optionalAddOns) ||
+      !candidate.optionalAddOns.every(isQuoteOptionalAddOn))
   ) {
     return false;
   }

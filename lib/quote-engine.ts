@@ -1,4 +1,8 @@
-import type { MockQuoteResponse, QuoteBreakdownLineItem } from "@/lib/mock-quote";
+import type {
+  MockQuoteResponse,
+  QuoteBreakdownLineItem,
+  QuoteOptionalAddOn,
+} from "@/lib/mock-quote";
 import { DEFAULT_LANGUAGE, type Language } from "@/lib/translations";
 import { sanitizePlainText } from "@/lib/validation";
 
@@ -43,6 +47,16 @@ type LocalizedCopy = {
   standard: string;
   deep: string;
   moveOut: string;
+  weeklyMaintenance: string;
+  biweeklyMaintenance: string;
+  monthlyMaintenance: string;
+  recurringMaintenance: string;
+  optionalPetHair: string;
+  optionalFridge: string;
+  optionalOven: string;
+  optionalInteriorWindows: string;
+  optionalConfirm: string;
+  maintenanceStandardConditionNote: string;
 };
 
 const PROMPT_INJECTION_PATTERNS = [
@@ -104,6 +118,17 @@ const localizedCopy = {
     standard: "standard",
     deep: "deep",
     moveOut: "move-out",
+    weeklyMaintenance: "Weekly maintenance",
+    biweeklyMaintenance: "Biweekly maintenance",
+    monthlyMaintenance: "Monthly maintenance",
+    recurringMaintenance: "Recurring maintenance",
+    optionalPetHair: "Pet hair fee",
+    optionalFridge: "Inside fridge add-on",
+    optionalOven: "Inside oven add-on",
+    optionalInteriorWindows: "Interior windows add-on",
+    optionalConfirm: "Optional; confirm before adding to the total.",
+    maintenanceStandardConditionNote:
+      "Maintenance pricing assumes the home is brought to standard condition first.",
   },
   es: {
     baseClean: "Alcance base de limpieza",
@@ -117,6 +142,17 @@ const localizedCopy = {
     standard: "estandar",
     deep: "profunda",
     moveOut: "mudanza",
+    weeklyMaintenance: "Mantenimiento semanal",
+    biweeklyMaintenance: "Mantenimiento quincenal",
+    monthlyMaintenance: "Mantenimiento mensual",
+    recurringMaintenance: "Mantenimiento recurrente",
+    optionalPetHair: "Cargo por pelo de mascota",
+    optionalFridge: "Extra de refrigerador",
+    optionalOven: "Extra de horno",
+    optionalInteriorWindows: "Extra de ventanas interiores",
+    optionalConfirm: "Opcional; confirmar antes de agregar al total.",
+    maintenanceStandardConditionNote:
+      "El precio de mantenimiento asume que la casa queda primero en condicion estandar.",
   },
 } satisfies Record<Language, LocalizedCopy>;
 
@@ -273,6 +309,10 @@ function roundToNearestFive(value: number) {
   return Math.max(0, Math.round(value / 5) * 5);
 }
 
+function midpoint(low: number, high: number) {
+  return roundToNearestFive((low + high) / 2);
+}
+
 function roundHours(value: number) {
   return Math.max(1, Math.round(value * 2) / 2);
 }
@@ -289,6 +329,48 @@ function getCleaningTypeLabel(cleaningType: CleaningType, language: Language) {
   }
 
   return cleaningType === "deep" ? copy.deep : copy.standard;
+}
+
+function buildStandardCleanEstimate(details: ParsedQuoteDetails) {
+  const rates = RATE_BY_TYPE.standard;
+  const squareFootage = details.squareFootage ?? 1400;
+  const low = roundToNearestFive(Math.max(squareFootage * rates.low, rates.minimumLow));
+  const high = Math.max(
+    roundToNearestFive(Math.max(squareFootage * rates.high, rates.minimumHigh)),
+    low + 25,
+  );
+
+  return {
+    low,
+    high,
+    recommended: midpoint(low, high),
+  };
+}
+
+function buildPercentAddOn(input: {
+  label: string;
+  basePrice: number;
+  lowPercent: number;
+  highPercent: number;
+  minimumLow: number;
+  minimumHigh?: number;
+  description?: string;
+  note?: string;
+}): QuoteOptionalAddOn {
+  const low = roundToNearestFive(Math.max(input.basePrice * input.lowPercent, input.minimumLow));
+  const high = Math.max(
+    roundToNearestFive(Math.max(input.basePrice * input.highPercent, input.minimumHigh ?? input.minimumLow)),
+    low + 10,
+  );
+
+  return {
+    label: input.label,
+    low,
+    high,
+    recommended: midpoint(low, high),
+    description: input.description,
+    note: input.note,
+  };
 }
 
 async function parseQuotePrompt(prompt: string): Promise<ParsedQuoteDetails> {
@@ -496,6 +578,116 @@ function buildPricing(details: ParsedQuoteDetails, language: Language) {
   };
 }
 
+function buildOptionalAddOns(
+  details: ParsedQuoteDetails,
+  standardCleanEstimate: {
+    low: number;
+    high: number;
+    recommended: number;
+  },
+  language: Language,
+) {
+  const copy = localizedCopy[language];
+  const optionalAddOns: QuoteOptionalAddOn[] = [];
+  const recurringNote =
+    details.cleaningType === "standard" ? undefined : copy.maintenanceStandardConditionNote;
+  const recurringDescription = (low: number) =>
+    language === "es"
+      ? `Mantenimiento recurrente desde $${low} por visita despues de la limpieza inicial.`
+      : `Recurring maintenance starting at $${low} per visit after initial clean.`;
+
+  const weekly = buildPercentAddOn({
+    label: copy.weeklyMaintenance,
+    basePrice: standardCleanEstimate.recommended,
+    lowPercent: 0.55,
+    highPercent: 0.7,
+    minimumLow: 120,
+    description: recurringDescription(
+      roundToNearestFive(Math.max(standardCleanEstimate.recommended * 0.55, 120)),
+    ),
+    note: recurringNote,
+  });
+  const biweekly = buildPercentAddOn({
+    label: copy.biweeklyMaintenance,
+    basePrice: standardCleanEstimate.recommended,
+    lowPercent: 0.65,
+    highPercent: 0.8,
+    minimumLow: 140,
+    description: recurringDescription(
+      roundToNearestFive(Math.max(standardCleanEstimate.recommended * 0.65, 140)),
+    ),
+    note: recurringNote,
+  });
+  const monthly = buildPercentAddOn({
+    label: copy.monthlyMaintenance,
+    basePrice: standardCleanEstimate.recommended,
+    lowPercent: 0.8,
+    highPercent: 0.95,
+    minimumLow: 175,
+    description: recurringDescription(
+      roundToNearestFive(Math.max(standardCleanEstimate.recommended * 0.8, 175)),
+    ),
+    note: recurringNote,
+  });
+
+  optionalAddOns.push(weekly, biweekly, monthly);
+
+  if (!details.pets) {
+    optionalAddOns.push(
+      buildPercentAddOn({
+        label: copy.optionalPetHair,
+        basePrice: standardCleanEstimate.recommended,
+        lowPercent: 0.1,
+        highPercent: 0.15,
+        minimumLow: 35,
+        description:
+          language === "es"
+            ? "Para pelo de mascota o detalle adicional si se confirma en el alcance."
+            : "For pet hair or extra detail if confirmed in the scope.",
+      }),
+    );
+  }
+
+  if (!details.fridge) {
+    optionalAddOns.push({
+      label: copy.optionalFridge,
+      low: 30,
+      high: 45,
+      recommended: 40,
+      description: copy.optionalConfirm,
+    });
+  }
+
+  if (!details.oven) {
+    optionalAddOns.push({
+      label: copy.optionalOven,
+      low: 35,
+      high: 55,
+      recommended: 45,
+      description: copy.optionalConfirm,
+    });
+  }
+
+  if (!details.interiorWindows) {
+    const count = estimateInteriorWindowCount(details.squareFootage ?? 1400, details.beds);
+    const low = roundToNearestFive(Math.max(count * 5, 45));
+    const high = Math.max(roundToNearestFive(Math.max(count * 10, 90)), low + 20);
+
+    optionalAddOns.push({
+      label: copy.optionalInteriorWindows,
+      low,
+      high,
+      recommended: midpoint(low, high),
+      description:
+        language === "es"
+          ? `${count} ventanas estimadas; confirmar cantidad antes de agregar.`
+          : `${count} windows estimated; confirm count before adding.`,
+    });
+  }
+
+  return optionalAddOns;
+}
+
 function estimateLaborHours(details: ParsedQuoteDetails) {
   const squareFootage = details.squareFootage ?? 1400;
   const rates = RATE_BY_TYPE[details.cleaningType];
@@ -626,36 +818,11 @@ function buildScopeHighlights(details: ParsedQuoteDetails, language: Language) {
   return [detailsLine, conditionsLine, addonsLine];
 }
 
-function buildUpsellSuggestions(details: ParsedQuoteDetails, language: Language) {
-  const suggestions: string[] = [];
-
-  if (!details.interiorWindows) {
-    suggestions.push(language === "es" ? "Ofrecer ventanas interiores como extra" : "Offer interior windows as an add-on");
-  }
-
-  if (!details.fridge || !details.oven) {
-    suggestions.push(
-      language === "es"
-        ? "Agregar detalle de refrigerador u horno si el cliente lo necesita"
-        : "Add fridge or oven detail if the customer needs it",
-    );
-  }
-
-  suggestions.push(
-    language === "es"
-      ? "Ofrecer una tarifa recurrente para mantenimiento semanal o quincenal"
-      : "Offer a recurring maintenance rate for weekly or biweekly service",
-  );
-
-  if (details.pets) {
-    suggestions.push(
-      language === "es"
-        ? "Separar el cargo por pelo de mascota para proteger margen"
-        : "Separate the pet-hair fee to protect margin",
-    );
-  }
-
-  return suggestions.slice(0, 4);
+function buildUpsellSuggestions(optionalAddOns: QuoteOptionalAddOn[]) {
+  return optionalAddOns.slice(0, 4).map((addOn) => {
+    const range = formatMoneyRange(addOn.low, addOn.high);
+    return addOn.description ? `${addOn.label}: ${range}. ${addOn.description}` : `${addOn.label}: ${range}`;
+  });
 }
 
 function buildMarginNote(details: ParsedQuoteDetails, language: Language) {
@@ -751,6 +918,8 @@ export async function createQuoteEstimate(
   const safePrompt = stripPromptInjectionLines(sanitizedPrompt) || sanitizedPrompt;
   const details = await parseQuotePrompt(safePrompt);
   const pricing = buildPricing(details, language);
+  const standardCleanEstimate = buildStandardCleanEstimate(details);
+  const optionalAddOns = buildOptionalAddOns(details, standardCleanEstimate, language);
   const estimatedLaborHours = estimateLaborHours(details);
   const assumptions = buildAssumptions(details, language);
 
@@ -766,8 +935,16 @@ export async function createQuoteEstimate(
       currency: "USD",
       cadence: "one-time",
     },
+    standardCleanEstimate: {
+      low: standardCleanEstimate.low,
+      high: standardCleanEstimate.high,
+      recommended: standardCleanEstimate.recommended,
+      currency: "USD",
+      cadence: "one-time",
+    },
     estimatedLaborHours,
     breakdownLineItems: pricing.breakdownLineItems,
+    optionalAddOns,
     assumptions,
     detectedAddress: details.possibleAddress,
     propertyDataResolved: details.propertyDetailsResolved,
@@ -789,7 +966,7 @@ export async function createQuoteEstimate(
     },
     scopeHighlights: buildScopeHighlights(details, language),
     marginNote: buildMarginNote(details, language),
-    upsellSuggestions: buildUpsellSuggestions(details, language),
+    upsellSuggestions: buildUpsellSuggestions(optionalAddOns),
     customerMessage: buildCustomerMessage(details, pricing, estimatedLaborHours, language),
     nextActions: buildNextActions(details, language),
   };
