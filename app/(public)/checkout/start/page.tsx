@@ -63,28 +63,30 @@ export default async function CheckoutStartPage({ searchParams }: CheckoutStartP
     redirect("/billing/manage");
   }
 
-  const checkoutSession = await createCheckoutSessionForPlan({
-    email: user.email,
-    userId: user.id,
-    fullName:
-      typeof user.user_metadata.full_name === "string" ? user.user_metadata.full_name : undefined,
-    plan: selectedPlan,
-    allowTrial: access.paymentStatus !== "no_trial",
-  });
+  let checkoutSession: Awaited<ReturnType<typeof createCheckoutSessionForPlan>>;
 
-  if (!checkoutSession.success) {
+  try {
+    checkoutSession = await createCheckoutSessionForPlan({
+      email: user.email,
+      userId: user.id,
+      fullName:
+        typeof user.user_metadata.full_name === "string" ? user.user_metadata.full_name : undefined,
+      plan: selectedPlan,
+      allowTrial: access.paymentStatus !== "no_trial",
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown checkout error";
     console.error("[checkout/start] Failed to create Stripe checkout session", {
-      message: checkoutSession.message,
-      sessionId: checkoutSession.id ?? null,
-      urlPresent: checkoutSession.urlPresent ?? null,
+      message,
     });
     redirect("/access-pending?reason=checkout_unavailable");
   }
 
-  console.log("[checkout/start] Redirecting to Stripe checkout", {
-    sessionId: checkoutSession.id,
-    urlPresent: checkoutSession.urlPresent,
-  });
+  if (!checkoutSession.url) {
+    console.error("[checkout] Missing session.url", checkoutSession);
+    throw new Error("Missing Stripe checkout URL");
+  }
 
+  console.log("[checkout] Redirecting to Stripe:", checkoutSession.url);
   redirect(checkoutSession.url);
 }

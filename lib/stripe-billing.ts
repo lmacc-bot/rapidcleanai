@@ -47,20 +47,6 @@ type CreateCheckoutSessionInput = {
   allowTrial?: boolean;
 };
 
-type CreateCheckoutSessionResult =
-  | {
-      success: true;
-      id: string;
-      url: string;
-      urlPresent: true;
-    }
-  | {
-      success: false;
-      message: string;
-      id?: string;
-      urlPresent?: boolean;
-    };
-
 type CreateBillingPortalSessionResult =
   | {
       success: true;
@@ -319,73 +305,47 @@ export async function syncBillingAccessByEmail(input: BillingAccessSyncInput) {
 
 export async function createCheckoutSessionForPlan(
   input: CreateCheckoutSessionInput,
-): Promise<CreateCheckoutSessionResult> {
-  try {
-    const stripe = createStripeServerClient();
-    const customer = await getOrCreateStripeCustomer({
-      email: input.email,
-      userId: input.userId,
-      fullName: input.fullName,
-    });
-    const priceId = getStripePriceId(input.plan);
+): Promise<Stripe.Checkout.Session> {
+  const stripe = createStripeServerClient();
+  const customer = await getOrCreateStripeCustomer({
+    email: input.email,
+    userId: input.userId,
+    fullName: input.fullName,
+  });
+  const priceId = getStripePriceId(input.plan);
 
-    const session = await stripe.checkout.sessions.create({
-      mode: "subscription",
-      customer: customer.id,
-      client_reference_id: input.userId,
-      allow_promotion_codes: true,
-      success_url: buildAppUrl("/checkout/success"),
-      cancel_url: buildAppUrl("/checkout/cancel"),
-      line_items: [
-        {
-          price: priceId,
-          quantity: 1,
-        },
-      ],
+  const session = await stripe.checkout.sessions.create({
+    mode: "subscription",
+    customer: customer.id,
+    client_reference_id: input.userId,
+    allow_promotion_codes: true,
+    success_url: buildAppUrl("/checkout/success"),
+    cancel_url: buildAppUrl("/checkout/cancel"),
+    line_items: [
+      {
+        price: priceId,
+        quantity: 1,
+      },
+    ],
+    metadata: {
+      selected_plan: input.plan,
+      supabase_user_id: input.userId,
+    },
+    subscription_data: {
+      trial_period_days: input.allowTrial === false ? undefined : TRIAL_PERIOD_DAYS,
       metadata: {
         selected_plan: input.plan,
         supabase_user_id: input.userId,
       },
-      subscription_data: {
-        trial_period_days: input.allowTrial === false ? undefined : TRIAL_PERIOD_DAYS,
-        metadata: {
-          selected_plan: input.plan,
-          supabase_user_id: input.userId,
-        },
-      },
-    });
+    },
+  });
 
-    console.log("[checkout] Stripe checkout session created", {
-      sessionId: session.id,
-      urlPresent: Boolean(session.url),
-    });
+  console.log("[checkout] Stripe checkout session created", {
+    sessionId: session.id,
+    urlPresent: Boolean(session.url),
+  });
 
-    if (!session.url) {
-      console.error("[checkout] Stripe checkout session URL missing", {
-        sessionId: session.id,
-        urlPresent: false,
-      });
-
-      return {
-        success: false,
-        message: "Stripe did not return a checkout URL.",
-        id: session.id,
-        urlPresent: false,
-      };
-    }
-
-    return {
-      success: true,
-      id: session.id,
-      url: session.url,
-      urlPresent: true,
-    };
-  } catch (error) {
-    return {
-      success: false,
-      message: error instanceof Error ? error.message : "Unknown error",
-    };
-  }
+  return session;
 }
 
 export async function createBillingPortalSessionForEmail(
