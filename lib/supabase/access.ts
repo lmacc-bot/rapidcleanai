@@ -6,12 +6,14 @@ type BillingAccessRow = {
   has_access: boolean | null;
   payment_status: string | null;
   plan: string | null;
+  created_at: string | null;
 };
 
 export type BillingAccessStatus = {
   hasAccess: boolean;
   paymentStatus: string | null;
   plan: string | null;
+  createdAt: string | null;
 };
 
 type CreatePendingBillingAccessInput = {
@@ -34,6 +36,7 @@ const defaultBillingAccessStatus: BillingAccessStatus = {
   hasAccess: false,
   paymentStatus: null,
   plan: null,
+  createdAt: null,
 };
 
 function normalizeNullableString(value: unknown) {
@@ -49,7 +52,7 @@ export async function getBillingAccessStatus(userId: string): Promise<BillingAcc
     const supabase = createAdminSupabaseClient();
     const { data, error } = await supabase
       .from("billing_access")
-      .select("has_access, payment_status, plan")
+      .select("has_access, payment_status, plan, created_at")
       .eq("user_id", userId)
       .maybeSingle();
 
@@ -68,6 +71,7 @@ export async function getBillingAccessStatus(userId: string): Promise<BillingAcc
       hasAccess: row.has_access === true,
       paymentStatus: normalizeNullableString(row.payment_status),
       plan: normalizeNullableString(row.plan),
+      createdAt: normalizeNullableString(row.created_at),
     };
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { DashboardShell } from "@/components/dashboard-shell";
 import { GlowButton } from "@/components/glow-button";
+import { TrialCountdownBanner } from "@/components/trial-countdown-banner";
 import { Card, CardContent } from "@/components/ui/card";
 import { getQuoteWorkspaceSnapshot } from "@/lib/quote-usage";
 import { getBillingAccessStatus } from "@/lib/supabase/access";
@@ -14,7 +15,6 @@ import {
   getBillingPlanLabel,
   MANAGE_BILLING_HREF,
 } from "@/lib/stripe";
-import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
   title: "Dashboard",
@@ -60,32 +60,6 @@ function formatSavedQuoteCapacity(visible: number, limit: number | null) {
   return limit === null ? `${visible} saved` : `${visible} / ${limit}`;
 }
 
-function getTrialDaysRemainingFromTrialEnd(trialEndsAt: string | null) {
-  if (!trialEndsAt) {
-    return null;
-  }
-
-  const trialEndDate = new Date(trialEndsAt);
-
-  if (Number.isNaN(trialEndDate.getTime())) {
-    return null;
-  }
-
-  return Math.max(Math.ceil((trialEndDate.getTime() - Date.now()) / 86_400_000), 0);
-}
-
-function formatTrialDayCount(days: number) {
-  return `${days} day${days === 1 ? "" : "s"}`;
-}
-
-function formatTrialDaysRemaining(days: number | null) {
-  if (typeof days !== "number") {
-    return "Trial timing is syncing from Stripe.";
-  }
-
-  return `${formatTrialDayCount(days)} remaining.`;
-}
-
 export default async function DashboardPage() {
   let supabase: Awaited<ReturnType<typeof getServerUser>>["supabase"] | null = null;
   let user: Awaited<ReturnType<typeof getServerUser>>["user"] = null;
@@ -127,45 +101,14 @@ export default async function DashboardPage() {
   const isTrialing = access.paymentStatus === "trialing";
   const selectedPlan = stripeSummary?.plan ?? quoteWorkspace.usage.selectedPlan;
   const effectiveAccessLabel = isTrialing ? "Elite Trial" : formatPlan(selectedPlan);
-  const trialDaysRemaining =
-    getTrialDaysRemainingFromTrialEnd(stripeSummary?.trialEndsAt ?? null) ??
-    stripeSummary?.trialDaysRemaining ??
-    null;
-  const trialIsEndingSoon = typeof trialDaysRemaining === "number" && trialDaysRemaining <= 3;
 
   return (
     <div className="space-y-8">
       {isTrialing ? (
-        <div
-          className={cn(
-            "flex flex-col gap-4 rounded-3xl border px-5 py-4 sm:flex-row sm:items-center sm:justify-between",
-            trialIsEndingSoon
-              ? "border-amber-400/25 bg-amber-400/10 text-amber-50"
-              : "border-brand-neon/20 bg-brand-neon/10 text-white",
-          )}
-        >
-          <div>
-            <p className="text-sm font-semibold">
-              {trialIsEndingSoon && typeof trialDaysRemaining === "number"
-                ? `Your full-access trial ends in ${formatTrialDayCount(
-                    trialDaysRemaining,
-                  )}. Choose a plan to avoid losing access.`
-                : `You are on a full-access Elite trial. ${formatTrialDaysRemaining(
-                    trialDaysRemaining,
-                  )}`}
-            </p>
-            {!trialIsEndingSoon ? (
-              <p className="mt-1 text-sm text-brand-text">
-                Pick your plan before the trial ends to keep quote generation moving.
-              </p>
-            ) : null}
-          </div>
-          <div className="shrink-0">
-            <GlowButton href={MANAGE_BILLING_HREF} variant="secondary" trailingIcon={false}>
-              Manage Plan
-            </GlowButton>
-          </div>
-        </div>
+        <TrialCountdownBanner
+          trialEndsAt={stripeSummary?.trialEndsAt ?? null}
+          trialStartedAt={access.createdAt}
+        />
       ) : null}
 
       <section className="grid gap-5 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
@@ -235,9 +178,7 @@ export default async function DashboardPage() {
                   You are currently on a full-access trial. Choose your plan before the trial ends.
                 </p>
                 <p className="mt-2 text-sm text-brand-text">
-                  {typeof trialDaysRemaining === "number"
-                    ? `${trialDaysRemaining} day${trialDaysRemaining === 1 ? "" : "s"} remaining in your full-access trial.`
-                    : "Your full-access trial is active now."}
+                  Use Billing to manage or change your plan anytime.
                 </p>
               </div>
             ) : null}
