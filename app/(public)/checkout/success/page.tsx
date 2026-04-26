@@ -1,12 +1,11 @@
 import type { Metadata } from "next";
 import { GlowButton } from "@/components/glow-button";
 import { Card, CardContent } from "@/components/ui/card";
-import { siteConfig } from "@/lib/site";
 import { MANAGE_BILLING_HREF, TRIAL_PERIOD_DAYS } from "@/lib/stripe";
 
 export const metadata: Metadata = {
   title: "Checkout Success",
-  description: "RapidCleanAI started your full-access trial and is activating dashboard access.",
+  description: "RapidCleanAI started your full-access trial.",
 };
 
 export default function CheckoutSuccessPage() {
@@ -18,21 +17,23 @@ export default function CheckoutSuccessPage() {
             <p className="text-xs uppercase tracking-[0.2em] text-brand-neon">Payment received</p>
             <div className="space-y-4">
               <h1 className="font-display text-4xl text-white sm:text-5xl">
-                Your full-access trial is active
+                You&apos;re all set 🎉
               </h1>
               <p className="max-w-2xl text-base leading-8 text-brand-muted">
-                Stripe finished checkout successfully. RapidCleanAI can take a brief moment to
-                unlock the dashboard while the webhook syncs your {TRIAL_PERIOD_DAYS}-day trial.
+                Your {TRIAL_PERIOD_DAYS}-day free trial is active and you now have full access to
+                RapidCleanAI.
               </p>
               <p className="max-w-2xl text-base leading-8 text-brand-muted">
-                During the trial you get Elite-level access, and your selected paid plan will take
-                over after the trial unless you change it in Billing Portal.
+                Start generating quotes and close more jobs faster.
+              </p>
+              <p className="max-w-2xl text-sm leading-7 text-brand-text">
+                You can manage or change your plan anytime in Billing.
               </p>
             </div>
 
             <div className="flex flex-wrap gap-3">
               <GlowButton href="/dashboard" trailingIcon={false}>
-                Go to dashboard
+                Go to Dashboard
               </GlowButton>
               <GlowButton href={MANAGE_BILLING_HREF} variant="secondary" trailingIcon={false}>
                 Manage Billing
@@ -41,20 +42,14 @@ export default function CheckoutSuccessPage() {
           </div>
 
           <div className="rounded-[2rem] border border-white/10 bg-white/6 p-6">
-            <p className="text-xs uppercase tracking-[0.18em] text-brand-cyan">Need help?</p>
+            <p className="text-xs uppercase tracking-[0.18em] text-brand-cyan">What&apos;s next</p>
             <div className="mt-5 space-y-4 text-sm leading-7 text-brand-muted">
               <p>
-                Need to change plans before the trial ends? Use Billing Portal to downgrade,
-                upgrade, or cancel without leaving the Stripe-managed flow.
+                Head to your dashboard, enter a few job details, and RapidCleanAI will help shape a
+                customer-ready quote.
               </p>
-              <p>
-                Support:{" "}
-                <a
-                  href={`mailto:${siteConfig.pageSupportEmail}`}
-                  className="text-brand-cyan transition hover:text-white"
-                >
-                  {siteConfig.pageSupportEmail}
-                </a>
+              <p className="text-brand-text">
+                If access takes a few seconds to activate, just refresh.
               </p>
             </div>
           </div>

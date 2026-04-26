@@ -85,6 +85,16 @@ function normalizeNullableString(value: string | null | undefined) {
   return normalized.length > 0 ? normalized : null;
 }
 
+function getStableSiteUrl() {
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim().replace(/\/+$/, "");
+
+  if (!siteUrl) {
+    throw new Error("Missing NEXT_PUBLIC_SITE_URL. Stripe checkout redirects require a stable site URL.");
+  }
+
+  return siteUrl;
+}
+
 function normalizeSubscriptionStatus(status: string | null | undefined) {
   return normalizeNullableString(status);
 }
@@ -313,14 +323,19 @@ export async function createCheckoutSessionForPlan(
     fullName: input.fullName,
   });
   const priceId = getStripePriceId(input.plan);
+  const siteUrl = getStableSiteUrl();
+  const success_url = `${siteUrl}/checkout/success`;
+  const cancel_url = `${siteUrl}/checkout/cancel`;
+
+  console.log("[checkout] success_url:", success_url);
 
   const session = await stripe.checkout.sessions.create({
     mode: "subscription",
     customer: customer.id,
     client_reference_id: input.userId,
     allow_promotion_codes: true,
-    success_url: buildAppUrl("/checkout/success"),
-    cancel_url: buildAppUrl("/checkout/cancel"),
+    success_url,
+    cancel_url,
     line_items: [
       {
         price: priceId,

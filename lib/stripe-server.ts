@@ -1,6 +1,5 @@
 import "server-only";
 import Stripe from "stripe";
-import { siteConfig } from "@/lib/site";
 import {
   DEFAULT_BILLING_PLAN,
   isBillingPlanId,
@@ -92,5 +91,11 @@ export function normalizeBillingPlan(value: unknown): BillingPlanId {
 }
 
 export function buildAppUrl(path: string) {
-  return new URL(path, process.env.NEXT_PUBLIC_SITE_URL ?? siteConfig.url).toString();
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim();
+
+  if (!siteUrl) {
+    throw new Error("Missing NEXT_PUBLIC_SITE_URL. Stripe redirects require a stable site URL.");
+  }
+
+  return new URL(path, siteUrl).toString();
 }
