@@ -103,9 +103,12 @@ STRIPE_WEBHOOK_SECRET=whsec_YOUR_STRIPE_WEBHOOK_SECRET
 STRIPE_STARTER_PRICE_ID=price_YOUR_STARTER_PRICE_ID
 STRIPE_PRO_PRICE_ID=price_YOUR_PRO_PRICE_ID
 STRIPE_ELITE_PRICE_ID=price_YOUR_ELITE_PRICE_ID
+RESEND_API_KEY=re_YOUR_RESEND_API_KEY
+RESEND_FROM_EMAIL="RapidCleanAI <support@rapidcleanai.com>"
 ```
 
 Use the publishable key when available. The app also supports the legacy anon key for compatibility. `SUPABASE_SERVICE_ROLE_KEY`, `STRIPE_SECRET_KEY`, and `STRIPE_WEBHOOK_SECRET` are server-only. Never expose them in the browser.
+`RESEND_API_KEY` is server-only and powers proposal email sending. Configure `RESEND_FROM_EMAIL` with a sender address verified in Resend for production delivery.
 
 ## Supabase setup
 

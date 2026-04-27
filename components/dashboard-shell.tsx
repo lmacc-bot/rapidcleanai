@@ -58,6 +58,13 @@ type FollowUpCreateInput = {
   note: string;
 };
 
+type ProposalEmailInput = {
+  proposalId: string;
+  recipientEmail: string;
+  recipientName: string;
+  customMessage: string;
+};
+
 const emptyClientForm: ClientFormState = {
   name: "",
   phone: "",
@@ -495,7 +502,7 @@ function ProposalPreviewModal({
   onClose: () => void;
   onCopy: () => void;
   onDownloadPdf: () => void;
-  onSendEmail: () => void;
+  onSendEmail: (input: ProposalEmailInput) => Promise<boolean>;
   onSaveClient: (input: ClientCreateInput) => Promise<ClientSummary | null>;
   onCreateFollowUp: (input: FollowUpCreateInput) => Promise<boolean>;
 }) {
@@ -508,6 +515,11 @@ function ProposalPreviewModal({
   const [customFollowUpDate, setCustomFollowUpDate] = useState("");
   const [followUpSaving, setFollowUpSaving] = useState(false);
   const [followUpMessage, setFollowUpMessage] = useState<string | null>(null);
+  const [emailRecipientName, setEmailRecipientName] = useState("");
+  const [emailRecipientEmail, setEmailRecipientEmail] = useState("");
+  const [emailCustomMessage, setEmailCustomMessage] = useState("");
+  const [emailSending, setEmailSending] = useState(false);
+  const [emailValidationMessage, setEmailValidationMessage] = useState<string | null>(null);
   const whatsappHref = buildWhatsAppShareHref(proposal.message_text, clientForm.phone);
   const smsHref = buildSmsShareHref(proposal.message_text, clientForm.phone);
   const proposalDatabaseId = proposal.database_proposal_id ?? "";
@@ -556,6 +568,29 @@ function ProposalPreviewModal({
       setFollowUpMessage(saved ? t("follow_up_saved") : t("follow_up_failed"));
     } finally {
       setFollowUpSaving(false);
+    }
+  }
+
+  async function handleSendEmail() {
+    const proposalId = proposal.database_proposal_id ?? proposal.proposal_id;
+
+    if (!emailRecipientEmail.trim()) {
+      setEmailValidationMessage(t("proposal_email_required"));
+      return;
+    }
+
+    setEmailValidationMessage(null);
+    setEmailSending(true);
+
+    try {
+      await onSendEmail({
+        proposalId,
+        recipientEmail: emailRecipientEmail,
+        recipientName: emailRecipientName,
+        customMessage: emailCustomMessage,
+      });
+    } finally {
+      setEmailSending(false);
     }
   }
 
@@ -645,11 +680,52 @@ function ProposalPreviewModal({
           </div>
         </div>
 
-        {emailNotice ? (
-          <p className="mt-5 rounded-2xl border border-brand-cyan/20 bg-brand-cyan/10 px-4 py-3 text-sm text-brand-text">
-            {emailNotice}
-          </p>
-        ) : null}
+        <div className="mt-5 rounded-3xl border border-brand-neon/20 bg-brand-neon/10 p-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <p className="text-xs uppercase tracking-[0.18em] text-brand-neon">
+                {t("proposal_email_title")}
+              </p>
+              <p className="mt-2 text-sm leading-7 text-brand-text">
+                {t("proposal_email_description")}
+              </p>
+            </div>
+            <Button
+              type="button"
+              onClick={handleSendEmail}
+              disabled={emailSending}
+            >
+              {emailSending ? t("proposal_email_sending") : t("proposal_send_email")}
+            </Button>
+          </div>
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            <Input
+              value={emailRecipientName}
+              onChange={(event) => setEmailRecipientName(event.target.value)}
+              placeholder={t("proposal_email_name_placeholder")}
+              aria-label={t("proposal_email_recipient_name")}
+            />
+            <Input
+              type="email"
+              value={emailRecipientEmail}
+              onChange={(event) => setEmailRecipientEmail(event.target.value)}
+              placeholder={t("proposal_email_placeholder")}
+              aria-label={t("proposal_email_recipient_email")}
+            />
+            <Textarea
+              value={emailCustomMessage}
+              onChange={(event) => setEmailCustomMessage(event.target.value)}
+              placeholder={t("proposal_email_custom_placeholder")}
+              aria-label={t("proposal_email_custom_message")}
+              className="sm:col-span-2"
+            />
+          </div>
+          {emailValidationMessage || emailNotice ? (
+            <p className="mt-3 text-sm text-brand-text">
+              {emailValidationMessage ?? emailNotice}
+            </p>
+          ) : null}
+        </div>
 
         <div className="mt-6 rounded-3xl border border-white/10 bg-white/5 p-4">
           <p className="text-xs uppercase tracking-[0.18em] text-brand-muted">
@@ -774,9 +850,6 @@ function ProposalPreviewModal({
           </Button>
           <Button type="button" variant="secondary" onClick={onDownloadPdf}>
             {t("proposal_download_pdf")}
-          </Button>
-          <Button type="button" variant="secondary" onClick={onSendEmail}>
-            {t("proposal_send_email")}
           </Button>
         </div>
       </div>
@@ -1272,8 +1345,40 @@ export function DashboardShell({
     popup.document.close();
   }
 
-  function handleSendProposalEmail() {
-    setProposalEmailNotice(t("proposal_email_stub"));
+  async function handleSendProposalEmail(input: ProposalEmailInput) {
+    setProposalEmailNotice(null);
+
+    try {
+      console.log("[proposal email] sending email request");
+      const response = await fetch("/api/proposals/email", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          proposal_id: input.proposalId,
+          recipient_email: input.recipientEmail,
+          recipient_name: input.recipientName,
+          custom_message: input.customMessage,
+          language,
+        }),
+        cache: "no-store",
+        credentials: "same-origin",
+      });
+      const payload = (await response.json().catch(() => null)) as unknown;
+
+      if (!response.ok) {
+        throw new Error(getApiErrorMessage(payload, t));
+      }
+
+      setProposalEmailNotice(t("proposal_email_sent"));
+      return true;
+    } catch (error) {
+      setProposalEmailNotice(
+        error instanceof Error ? error.message : t("proposal_email_failed"),
+      );
+      return false;
+    }
   }
 
   function handleNewQuote() {
