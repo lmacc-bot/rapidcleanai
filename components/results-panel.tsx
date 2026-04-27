@@ -43,6 +43,22 @@ function fillTemplate(template: string, values: Record<string, string | number>)
   );
 }
 
+function trackClientEvent(eventName: string, metadata: Record<string, unknown>) {
+  void fetch("/api/events/track", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      event_name: eventName,
+      metadata,
+    }),
+    cache: "no-store",
+    credentials: "same-origin",
+    keepalive: true,
+  }).catch(() => null);
+}
+
 function formatHistoryWindow(historyDays: number | null, t: Translator) {
   return historyDays === null
     ? t("results_unlimited_history")
@@ -230,7 +246,19 @@ export function ResultsPanel({
             <p className="text-sm font-semibold text-white">{upgradePrompt.title}</p>
             <p className="mt-2 text-sm leading-7 text-brand-text">{upgradePrompt.description}</p>
             <div className="mt-4">
-              <GlowButton href={upgradePrompt.href} variant="secondary" trailingIcon={false}>
+              <GlowButton
+                href={upgradePrompt.href}
+                variant="secondary"
+                trailingIcon={false}
+                onClick={() =>
+                  trackClientEvent("upgrade_clicked", {
+                    source: "results_panel",
+                    plan: usage.selectedPlan,
+                    effective_plan: usage.effectivePlan,
+                    language,
+                  })
+                }
+              >
                 {upgradePrompt.cta}
               </GlowButton>
             </div>

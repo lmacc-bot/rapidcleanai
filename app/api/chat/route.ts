@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { trackEvent } from "@/lib/events";
 import { isMockQuoteResponse } from "@/lib/mock-quote";
 import { createQuoteEstimate } from "@/lib/quote-engine";
 import { buildQuoteUsageHeaders, checkQuoteGenerationAllowance, recordGeneratedQuote } from "@/lib/quote-usage";
@@ -254,6 +255,18 @@ export async function POST(request: Request) {
       ...result,
       savedQuoteId: recordedQuote.savedQuoteId,
     };
+
+    trackEvent(
+      "quote_generated",
+      {
+        plan: quoteAllowance.plan.selectedPlan,
+        effective_plan: quoteAllowance.plan.effectivePlan,
+        language,
+        quote_value: result.recommendedEstimate.recommended,
+        saved_quote_id: recordedQuote.savedQuoteId,
+      },
+      userId,
+    );
 
     return NextResponse.json(responseBody, {
       headers: buildNoStoreHeaders({

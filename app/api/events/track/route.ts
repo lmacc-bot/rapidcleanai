@@ -1,13 +1,8 @@
 import { NextResponse } from "next/server";
-import { trackEvent } from "@/lib/events";
-import { isMockQuoteResponse } from "@/lib/mock-quote";
-import { isProposalPayload } from "@/lib/proposal-types";
-import { createProposalFromQuote } from "@/lib/proposals";
-import { createAdminSupabaseClient } from "@/lib/supabase/admin";
+import { isTrackableEventName, trackEvent } from "@/lib/events";
 import { getServerUser } from "@/lib/supabase/auth";
-import { DEFAULT_LANGUAGE, isLanguage } from "@/lib/translations";
 
-const MAX_PROPOSAL_BODY_BYTES = 1024;
+const MAX_EVENT_BODY_BYTES = 2 * 1024;
 
 export const runtime = "nodejs";
 
@@ -21,14 +16,6 @@ type ParsedJsonBodyResult =
       status: 400 | 413;
       message: string;
     };
-
-type SavedQuoteRow = {
-  quote_payload: unknown;
-};
-
-type InsertedProposalRow = {
-  id: string;
-};
 
 function buildNoStoreHeaders(extraHeaders?: HeadersInit) {
   const headers = new Headers({
@@ -68,7 +55,7 @@ function logUnexpectedFailure(context: string, error: unknown) {
       : typeof error === "string"
         ? error
         : "Unknown error";
-  console.error(`[api/proposals/generate] ${context}`, detail);
+  console.error(`[api/events/track] ${context}`, detail);
 }
 
 async function parseJsonBody(
@@ -119,19 +106,6 @@ async function parseJsonBody(
   }
 }
 
-function parseSavedQuoteId(value: unknown) {
-  if (typeof value === "number" && Number.isInteger(value) && value > 0) {
-    return value;
-  }
-
-  if (typeof value === "string" && /^\d+$/.test(value)) {
-    const parsed = Number(value);
-    return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : null;
-  }
-
-  return null;
-}
-
 export function OPTIONS() {
   return new NextResponse(null, {
     status: 204,
@@ -152,7 +126,7 @@ export async function POST(request: Request) {
   try {
     const { user } = await getServerUser();
     if (!user) {
-      return jsonError("Please log in to generate proposals.", 401, {
+      return jsonError("Please log in to track events.", 401, {
         Vary: "Cookie",
       });
     }
@@ -165,7 +139,7 @@ export async function POST(request: Request) {
     });
   }
 
-  const parsedBody = await parseJsonBody(request, MAX_PROPOSAL_BODY_BYTES);
+  const parsedBody = await parseJsonBody(request, MAX_EVENT_BODY_BYTES);
   if (!parsedBody.success) {
     return jsonError(parsedBody.message, parsedBody.status, {
       Vary: "Cookie",
@@ -178,91 +152,25 @@ export async function POST(request: Request) {
     });
   }
 
-  const savedQuoteId = parseSavedQuoteId(parsedBody.data.saved_quote_id);
-  if (savedQuoteId === null) {
-    return jsonError("Choose a saved quote before creating a proposal.", 400, {
+  if (!isTrackableEventName(parsedBody.data.event_name)) {
+    return jsonError("Invalid event name.", 400, {
       Vary: "Cookie",
     });
   }
 
-  const language = isLanguage(parsedBody.data.language)
-    ? parsedBody.data.language
-    : DEFAULT_LANGUAGE;
+  trackEvent(
+    parsedBody.data.event_name,
+    isPlainObject(parsedBody.data.metadata) ? parsedBody.data.metadata : {},
+    userId,
+  );
 
-  try {
-    const supabase = createAdminSupabaseClient();
-    const { data, error } = await supabase
-      .from("saved_quotes")
-      .select("quote_payload")
-      .eq("id", savedQuoteId)
-      .eq("user_id", userId)
-      .maybeSingle();
-
-    if (error) {
-      throw new Error(error.message);
-    }
-
-    const savedQuote = (data ?? null) as SavedQuoteRow | null;
-    if (!savedQuote || !isMockQuoteResponse(savedQuote.quote_payload)) {
-      return jsonError("Saved quote was not found.", 404, {
-        Vary: "Cookie",
-      });
-    }
-
-    const proposal = createProposalFromQuote({
-      savedQuoteId,
-      quote: savedQuote.quote_payload,
-      language,
-    });
-
-    if (!isProposalPayload(proposal)) {
-      return jsonError("Unable to generate a valid proposal right now.", 502, {
-        Vary: "Cookie",
-      });
-    }
-
-    const { data: insertedProposal, error: insertError } = await supabase
-      .from("proposals")
-      .insert({
-        user_id: userId,
-        saved_quote_id: savedQuoteId,
-        payload: proposal,
-      })
-      .select("id")
-      .single();
-
-    if (insertError) {
-      throw new Error(insertError.message);
-    }
-
-    const inserted = (insertedProposal ?? null) as InsertedProposalRow | null;
-    if (!inserted?.id) {
-      throw new Error("Proposal insert did not return an id.");
-    }
-
-    const responseProposal = {
-      ...proposal,
-      database_proposal_id: inserted.id,
-    };
-
-    trackEvent(
-      "proposal_created",
-      {
-        proposal_id: inserted.id,
-        saved_quote_id: savedQuoteId,
-        language,
-        quote_value: proposal.total_price,
-      },
-      userId,
-    );
-
-    return jsonResponse(responseProposal, 200, {
+  return jsonResponse(
+    {
+      tracked: true,
+    },
+    202,
+    {
       Vary: "Cookie",
-    });
-  } catch (error) {
-    logUnexpectedFailure("Proposal generation failure", error);
-    return jsonError("Unable to generate a proposal right now.", 500, {
-      Vary: "Cookie",
-    });
-  }
+    },
+  );
 }

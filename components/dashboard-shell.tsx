@@ -207,6 +207,22 @@ function buildSmsShareHref(message: string, phone: string) {
     : `sms:?body=${encodedMessage}`;
 }
 
+function trackClientEvent(eventName: string, metadata: Record<string, unknown>) {
+  void fetch("/api/events/track", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      event_name: eventName,
+      metadata,
+    }),
+    cache: "no-store",
+    credentials: "same-origin",
+    keepalive: true,
+  }).catch(() => null);
+}
+
 function getApiErrorMessage(payload: unknown, t: Translator) {
   if (isQuoteApiErrorPayload(payload)) {
     return payload.error;
@@ -423,7 +439,7 @@ function QuoteLimitModal({
   usage: QuoteUsageSummary;
   onClose: () => void;
 }) {
-  const t = useT();
+  const { language, t } = useLanguage();
   const { used, limit } = getLimitModalUsage(payload, usage);
   const isStarter = payload.plan === "starter" || usage.selectedPlan === "starter";
   const usageLabel = typeof limit === "number" ? `${used}/${limit}` : `${used}/unlimited`;
@@ -472,6 +488,14 @@ function QuoteLimitModal({
         <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-end">
           <Link
             href={MANAGE_BILLING_HREF}
+            onClick={() =>
+              trackClientEvent("upgrade_clicked", {
+                source: "quote_limit_modal",
+                plan: usage.selectedPlan,
+                effective_plan: usage.effectivePlan,
+                language,
+              })
+            }
             className="inline-flex h-11 items-center justify-center rounded-xl bg-brand-neon px-5 text-sm font-semibold text-brand-bg shadow-glow transition hover:-translate-y-0.5"
           >
             {t("upgrade_modal_cta")}
@@ -506,7 +530,7 @@ function ProposalPreviewModal({
   onSaveClient: (input: ClientCreateInput) => Promise<ClientSummary | null>;
   onCreateFollowUp: (input: FollowUpCreateInput) => Promise<boolean>;
 }) {
-  const t = useT();
+  const { language, t } = useLanguage();
   const [clientForm, setClientForm] = useState<ClientFormState>(emptyClientForm);
   const [savedClientId, setSavedClientId] = useState<string | null>(null);
   const [clientSaving, setClientSaving] = useState(false);
@@ -523,6 +547,7 @@ function ProposalPreviewModal({
   const whatsappHref = buildWhatsAppShareHref(proposal.message_text, clientForm.phone);
   const smsHref = buildSmsShareHref(proposal.message_text, clientForm.phone);
   const proposalDatabaseId = proposal.database_proposal_id ?? "";
+  const proposalTrackingId = proposal.database_proposal_id ?? proposal.proposal_id;
 
   function updateClientField(field: keyof ClientFormState, value: string) {
     setClientForm((current) => ({
@@ -779,12 +804,26 @@ function ProposalPreviewModal({
               href={whatsappHref}
               target="_blank"
               rel="noreferrer"
+              onClick={() =>
+                trackClientEvent("proposal_sent_whatsapp", {
+                  proposal_id: proposalTrackingId,
+                  language,
+                  quote_value: proposal.total_price,
+                })
+              }
               className="inline-flex h-11 items-center justify-center rounded-xl bg-brand-neon px-5 text-sm font-semibold text-brand-bg shadow-glow transition hover:-translate-y-0.5"
             >
               {t("proposal_send_whatsapp")}
             </a>
             <a
               href={smsHref}
+              onClick={() =>
+                trackClientEvent("proposal_sent_sms", {
+                  proposal_id: proposalTrackingId,
+                  language,
+                  quote_value: proposal.total_price,
+                })
+              }
               className="inline-flex h-11 items-center justify-center rounded-xl border border-white/12 bg-white/6 px-5 text-sm font-semibold text-brand-text transition hover:border-brand-cyan/40 hover:bg-white/10"
             >
               {t("proposal_send_sms")}

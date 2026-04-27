@@ -1,5 +1,6 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { trackEvent } from "@/lib/events";
 import { createCheckoutSessionForPlan, getStripeSubscriptionSummaryByEmail } from "@/lib/stripe-billing";
 import { getBillingAccessStatus } from "@/lib/supabase/access";
 import { getServerUser } from "@/lib/supabase/auth";
@@ -124,5 +125,15 @@ export default async function CheckoutStartPage({ searchParams }: CheckoutStartP
   }
 
   console.log("[checkout] Redirecting to Stripe:", checkoutSession.url);
+  trackEvent(
+    "subscription_started",
+    {
+      plan: selectedPlan,
+      allow_trial: allowTrial,
+      paid_checkout_requested: paidCheckoutRequested,
+      stripe_session_id: checkoutSession.id,
+    },
+    user.id,
+  );
   redirect(checkoutSession.url);
 }

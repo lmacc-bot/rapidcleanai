@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { trackEvent } from "@/lib/events";
 import type { FollowUpCreateResponse, FollowUpSummary } from "@/lib/follow-up-types";
 import { isProposalPayload } from "@/lib/proposal-types";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
@@ -293,6 +294,18 @@ export async function POST(request: Request) {
     const response: FollowUpCreateResponse = {
       followUp: mapFollowUpResponse(followUpData as FollowUpRow, client, proposal),
     };
+
+    trackEvent(
+      "follow_up_created",
+      {
+        follow_up_id: response.followUp.id,
+        proposal_id: proposalId,
+        client_id: effectiveClientId,
+        due_at: dueAt,
+        proposal_total: response.followUp.proposalTotal,
+      },
+      userId,
+    );
 
     return jsonResponse(response, 200, {
       Vary: "Cookie",

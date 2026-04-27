@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { trackEvent } from "@/lib/events";
 import { isProposalPayload, type ProposalPayload } from "@/lib/proposal-types";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { getServerUser } from "@/lib/supabase/auth";
@@ -331,6 +332,16 @@ export async function POST(request: Request) {
       }),
       replyTo: replyToEmail,
     });
+
+    trackEvent(
+      "proposal_sent_email",
+      {
+        proposal_id: proposalRow.id,
+        language,
+        recipient_domain: recipientEmail.split("@")[1] ?? null,
+      },
+      userId,
+    );
 
     return jsonResponse(
       {
