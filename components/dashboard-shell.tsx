@@ -15,6 +15,7 @@ import { ChatPanel, type ChatMessage } from "@/components/chat-panel";
 import { useLanguage, useT } from "@/components/language-provider";
 import { ResultsPanel } from "@/components/results-panel";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { isProposalPayload, type ProposalPayload } from "@/lib/proposal-types";
 import type { TranslationKey } from "@/lib/translations";
 
@@ -96,6 +97,40 @@ function buildProposalHtml(proposal: ProposalPayload, t: Translator) {
   <script>window.addEventListener("load", () => window.print());</script>
 </body>
 </html>`;
+}
+
+function normalizeSharePhone(value: string) {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return "";
+  }
+
+  const startsWithPlus = trimmed.startsWith("+");
+  const digitsOnly = trimmed.replace(/\D/g, "");
+
+  if (!digitsOnly) {
+    return "";
+  }
+
+  return startsWithPlus ? digitsOnly : digitsOnly;
+}
+
+function buildWhatsAppShareHref(message: string, phone: string) {
+  const encodedMessage = encodeURIComponent(message);
+  const normalizedPhone = normalizeSharePhone(phone);
+
+  return normalizedPhone
+    ? `https://wa.me/${normalizedPhone}?text=${encodedMessage}`
+    : `https://wa.me/?text=${encodedMessage}`;
+}
+
+function buildSmsShareHref(message: string, phone: string) {
+  const encodedMessage = encodeURIComponent(message);
+  const normalizedPhone = normalizeSharePhone(phone);
+
+  return normalizedPhone
+    ? `sms:${normalizedPhone}?body=${encodedMessage}`
+    : `sms:?body=${encodedMessage}`;
 }
 
 function getApiErrorMessage(payload: unknown, t: Translator) {
@@ -314,6 +349,9 @@ function ProposalPreviewModal({
   onSendEmail: () => void;
 }) {
   const t = useT();
+  const [sharePhone, setSharePhone] = useState("");
+  const whatsappHref = buildWhatsAppShareHref(proposal.message_text, sharePhone);
+  const smsHref = buildSmsShareHref(proposal.message_text, sharePhone);
 
   return (
     <div
@@ -407,7 +445,38 @@ function ProposalPreviewModal({
           </p>
         ) : null}
 
-        <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:justify-end">
+        <div className="mt-6 rounded-3xl border border-white/10 bg-white/5 p-4">
+          <label className="text-xs uppercase tracking-[0.18em] text-brand-muted" htmlFor="proposal-share-phone">
+            {t("proposal_phone_label")}
+          </label>
+          <Input
+            id="proposal-share-phone"
+            type="tel"
+            inputMode="tel"
+            value={sharePhone}
+            onChange={(event) => setSharePhone(event.target.value)}
+            placeholder={t("proposal_phone_placeholder")}
+            className="mt-3"
+          />
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            <a
+              href={whatsappHref}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex h-11 items-center justify-center rounded-xl bg-brand-neon px-5 text-sm font-semibold text-brand-bg shadow-glow transition hover:-translate-y-0.5"
+            >
+              {t("proposal_send_whatsapp")}
+            </a>
+            <a
+              href={smsHref}
+              className="inline-flex h-11 items-center justify-center rounded-xl border border-white/12 bg-white/6 px-5 text-sm font-semibold text-brand-text transition hover:border-brand-cyan/40 hover:bg-white/10"
+            >
+              {t("proposal_send_sms")}
+            </a>
+          </div>
+        </div>
+
+        <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:justify-end">
           <Button type="button" onClick={onCopy}>
             {copied ? t("proposal_copied") : t("proposal_copy_text")}
           </Button>
