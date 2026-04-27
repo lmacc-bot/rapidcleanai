@@ -202,6 +202,9 @@ export const translations = {
     chat_mvp_assistant: "MVP Assistant",
     chat_recent_prompts: "Recent prompts",
     chat_sample_prompts: "Sample prompts",
+    chat_select_client: "Select Client",
+    chat_new_client: "New Client",
+    chat_client_autofill_hint: "Selecting a client can autofill the quote prompt with saved address and notes.",
     chat_sample_prompt_office:
       "Weekly office clean for 4,000 sq ft, 3 restrooms, 2 break rooms, quote needed this week.",
     chat_sample_prompt_moveout:
@@ -545,6 +548,9 @@ export const translations = {
     chat_mvp_assistant: "Asistente MVP",
     chat_recent_prompts: "Prompts recientes",
     chat_sample_prompts: "Ejemplos",
+    chat_select_client: "Seleccionar cliente",
+    chat_new_client: "Nuevo cliente",
+    chat_client_autofill_hint: "Seleccionar un cliente puede llenar el prompt con direccion y notas guardadas.",
     chat_sample_prompt_office:
       "Limpieza semanal de oficina de 4,000 pies cuadrados, 3 banos, 2 areas de descanso, cotizacion para esta semana.",
     chat_sample_prompt_moveout:

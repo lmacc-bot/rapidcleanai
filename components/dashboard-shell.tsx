@@ -23,7 +23,7 @@ import {
   type ClientSummary,
 } from "@/lib/client-types";
 import { isProposalPayload, type ProposalPayload } from "@/lib/proposal-types";
-import type { TranslationKey } from "@/lib/translations";
+import type { Language, TranslationKey } from "@/lib/translations";
 
 function buildInitialMessage(content: string): ChatMessage {
   return {
@@ -50,6 +50,9 @@ const emptyClientForm: ClientFormState = {
   address: "",
   notes: "",
 };
+
+const CLIENT_SELECTOR_LIMIT = 25;
+const CLIENT_PANEL_LIMIT = 5;
 
 function buildCopyPayload(result: MockQuoteResponse, t: Translator) {
   return [
@@ -280,6 +283,33 @@ function buildLocalQuoteLimitError(usage: QuoteUsageSummary, t: Translator): Quo
     upgradeHref: MANAGE_BILLING_HREF,
     upgradePlan: usage.selectedPlan === "starter" ? "pro" : null,
   };
+}
+
+function buildClientQuotePrompt(client: ClientSummary, language: Language) {
+  const fallbackClient =
+    client.name ||
+    client.email ||
+    client.phone ||
+    (language === "es" ? "cliente guardado" : "saved client");
+  const lines = [
+    client.address
+      ? language === "es"
+        ? `Cotizacion para ${client.address}`
+        : `Quote for ${client.address}`
+      : language === "es"
+        ? `Cotizacion para ${fallbackClient}`
+        : `Quote for ${fallbackClient}`,
+  ];
+
+  if (client.name) {
+    lines.push(language === "es" ? `Cliente: ${client.name}` : `Client: ${client.name}`);
+  }
+
+  if (client.notes) {
+    lines.push(language === "es" ? `Notas: ${client.notes}` : `Notes: ${client.notes}`);
+  }
+
+  return lines.join("\n");
 }
 
 function QuoteLimitModal({
@@ -577,6 +607,7 @@ function ProposalPreviewModal({
 
 function ClientsPanel({ clients }: { clients: ClientSummary[] }) {
   const t = useT();
+  const visibleClients = clients.slice(0, CLIENT_PANEL_LIMIT);
 
   return (
     <section className="surface-gradient premium-border rounded-3xl p-6">
@@ -592,9 +623,9 @@ function ClientsPanel({ clients }: { clients: ClientSummary[] }) {
         </p>
       </div>
 
-      {clients.length ? (
+      {visibleClients.length ? (
         <div className="mt-5 grid gap-3 lg:grid-cols-5">
-          {clients.map((client) => {
+          {visibleClients.map((client) => {
             const displayName = client.name || client.address || client.email || client.phone || t("dashboard_clients");
             const contact = client.phone || client.email || t("client_contact_missing");
 
@@ -646,6 +677,7 @@ export function DashboardShell({
   const [proposalCopied, setProposalCopied] = useState(false);
   const [proposalEmailNotice, setProposalEmailNotice] = useState<string | null>(null);
   const [clients, setClients] = useState(initialClients);
+  const [selectedClientId, setSelectedClientId] = useState("");
   const samplePrompts = [
     t("chat_sample_prompt_office"),
     t("chat_sample_prompt_moveout"),
@@ -873,7 +905,7 @@ export function DashboardShell({
       }
 
       setClients((current) =>
-        [payload.client, ...current.filter((client) => client.id !== payload.client.id)].slice(0, 5),
+        [payload.client, ...current.filter((client) => client.id !== payload.client.id)].slice(0, CLIENT_SELECTOR_LIMIT),
       );
       return true;
     } catch {
@@ -927,6 +959,7 @@ export function DashboardShell({
 
   function handleNewQuote() {
     setPrompt("");
+    setSelectedClientId("");
     setResult(null);
     setCopied(false);
     setErrorMessage(null);
@@ -936,6 +969,7 @@ export function DashboardShell({
 
   function handleClear() {
     setPrompt("");
+    setSelectedClientId("");
     setResult(null);
     setCopied(false);
     setErrorMessage(null);
@@ -952,6 +986,21 @@ export function DashboardShell({
     setResult(null);
   }
 
+  function handleClientSelect(clientId: string) {
+    setSelectedClientId(clientId);
+
+    if (!clientId) {
+      setPrompt("");
+      return;
+    }
+
+    const selectedClient = clients.find((client) => client.id === clientId);
+
+    if (selectedClient) {
+      setPrompt(buildClientQuotePrompt(selectedClient, language));
+    }
+  }
+
   return (
     <>
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
@@ -962,6 +1011,9 @@ export function DashboardShell({
           onLimitReached={handleLimitReached}
           messages={messages}
           samplePrompts={samplePrompts}
+          clients={clients}
+          selectedClientId={selectedClientId}
+          onClientSelect={handleClientSelect}
           loading={loading}
           usage={usage}
         />

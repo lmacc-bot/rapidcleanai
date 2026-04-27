@@ -24,6 +24,8 @@ export const metadata: Metadata = {
   description: "RapidCleanAI protected dashboard.",
 };
 
+const CLIENT_REUSE_LIMIT = 25;
+
 function buildDashboardLoginHref(errorCode?: string) {
   const searchParams = new URLSearchParams({
     redirect: "/dashboard",
@@ -107,7 +109,7 @@ export default async function DashboardPage() {
   }
 
   const quoteWorkspace = await getQuoteWorkspaceSnapshot(user.id);
-  const latestClients = await getLatestClients(user.id);
+  const latestClients = await getLatestClients(user.id, CLIENT_REUSE_LIMIT);
 
   const { data: profile } = await supabase
     .from("profiles")

@@ -3,6 +3,7 @@
 import type { FormEvent } from "react";
 import { MessageSquareText, SendHorizontal, Sparkles } from "lucide-react";
 import { useLanguage } from "@/components/language-provider";
+import type { ClientSummary } from "@/lib/client-types";
 import type { QuoteUsageSummary } from "@/lib/quote-limits";
 import { getBillingPlanLabel, type BillingAiSpeed } from "@/lib/stripe";
 import type { Language, TranslationKey } from "@/lib/translations";
@@ -26,6 +27,9 @@ type ChatPanelProps = {
   onLimitReached: () => void;
   messages: ChatMessage[];
   samplePrompts: string[];
+  clients: ClientSummary[];
+  selectedClientId: string;
+  onClientSelect: (clientId: string) => void;
   loading: boolean;
   usage: QuoteUsageSummary;
 };
@@ -55,6 +59,18 @@ function formatResetTime(isoString: string | null, language: Language) {
   });
 }
 
+function getClientOptionLabel(client: ClientSummary, fallback: string) {
+  const primary = client.name || client.address || client.email || client.phone || fallback;
+  const secondary =
+    client.name && client.address
+      ? client.address
+      : client.name
+        ? client.email || client.phone
+        : null;
+
+  return secondary && secondary !== primary ? `${primary} - ${secondary}` : primary;
+}
+
 export function ChatPanel({
   prompt,
   onPromptChange,
@@ -62,6 +78,9 @@ export function ChatPanel({
   onLimitReached,
   messages,
   samplePrompts,
+  clients,
+  selectedClientId,
+  onClientSelect,
   loading,
   usage,
 }: ChatPanelProps) {
@@ -165,6 +184,32 @@ export function ChatPanel({
         </div>
 
         <form className="space-y-4" onSubmit={handleSubmit}>
+          <div className="space-y-2">
+            <label
+              htmlFor="quote-client-select"
+              className="block text-xs uppercase tracking-[0.18em] text-brand-muted"
+            >
+              {t("chat_select_client")}
+            </label>
+            <select
+              id="quote-client-select"
+              value={selectedClientId}
+              onChange={(event) => onClientSelect(event.target.value)}
+              className="h-12 w-full rounded-2xl border border-white/10 bg-[rgba(11,15,20,0.82)] px-4 text-sm text-brand-text outline-none transition focus:border-brand-neon/50 focus:ring-2 focus:ring-brand-neon/15"
+            >
+              <option value="">{t("chat_new_client")}</option>
+              {clients.map((client) => (
+                <option key={client.id} value={client.id}>
+                  {getClientOptionLabel(client, t("dashboard_clients"))}
+                </option>
+              ))}
+            </select>
+            {clients.length ? (
+              <p className="text-xs leading-6 text-brand-muted">
+                {t("chat_client_autofill_hint")}
+              </p>
+            ) : null}
+          </div>
           <Textarea
             value={prompt}
             onChange={(event) => onPromptChange(event.target.value)}
