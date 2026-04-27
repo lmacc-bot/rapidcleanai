@@ -6,6 +6,7 @@ export type ProposalLineItem = {
 
 export type ProposalPayload = {
   proposal_id: string;
+  database_proposal_id?: string;
   subject: string;
   message_text: string;
   line_items: ProposalLineItem[];
@@ -39,6 +40,8 @@ export function isProposalPayload(value: unknown): value is ProposalPayload {
 
   return (
     typeof candidate.proposal_id === "string" &&
+    (candidate.database_proposal_id === undefined ||
+      typeof candidate.database_proposal_id === "string") &&
     typeof candidate.subject === "string" &&
     typeof candidate.message_text === "string" &&
     validLineItems(candidate.line_items) &&

@@ -22,8 +22,14 @@ import {
   type ClientCreateInput,
   type ClientSummary,
 } from "@/lib/client-types";
+import {
+  isFollowUpCompleteResponse,
+  isFollowUpCreateResponse,
+  type FollowUpSummary,
+} from "@/lib/follow-up-types";
 import { isProposalPayload, type ProposalPayload } from "@/lib/proposal-types";
 import type { Language, TranslationKey } from "@/lib/translations";
+import { cn } from "@/lib/utils";
 
 function buildInitialMessage(content: string): ChatMessage {
   return {
@@ -43,6 +49,15 @@ type ClientFormState = {
   notes: string;
 };
 
+type FollowUpOption = "tomorrow" | "three_days" | "seven_days" | "custom";
+
+type FollowUpCreateInput = {
+  proposalId: string;
+  clientId: string | null;
+  dueAt: string;
+  note: string;
+};
+
 const emptyClientForm: ClientFormState = {
   name: "",
   phone: "",
@@ -53,6 +68,33 @@ const emptyClientForm: ClientFormState = {
 
 const CLIENT_SELECTOR_LIMIT = 25;
 const CLIENT_PANEL_LIMIT = 5;
+
+const followUpOptions: Array<{
+  value: FollowUpOption;
+  labelKey: TranslationKey;
+  days: number | null;
+}> = [
+  {
+    value: "tomorrow",
+    labelKey: "follow_up_tomorrow",
+    days: 1,
+  },
+  {
+    value: "three_days",
+    labelKey: "follow_up_three_days",
+    days: 3,
+  },
+  {
+    value: "seven_days",
+    labelKey: "follow_up_seven_days",
+    days: 7,
+  },
+  {
+    value: "custom",
+    labelKey: "follow_up_custom_date",
+    days: null,
+  },
+];
 
 function buildCopyPayload(result: MockQuoteResponse, t: Translator) {
   return [
@@ -312,6 +354,59 @@ function buildClientQuotePrompt(client: ClientSummary, language: Language) {
   return lines.join("\n");
 }
 
+function addDaysIso(days: number) {
+  const date = new Date();
+  date.setDate(date.getDate() + days);
+  return date.toISOString();
+}
+
+function getTomorrowDateValue() {
+  const date = new Date();
+  date.setDate(date.getDate() + 1);
+  return date.toISOString().slice(0, 10);
+}
+
+function getCustomDateIso(value: string) {
+  if (!value) {
+    return null;
+  }
+
+  const [year, month, day] = value.split("-").map(Number);
+
+  if (!year || !month || !day) {
+    return null;
+  }
+
+  const date = new Date(year, month - 1, day, 9, 0, 0, 0);
+  return Number.isNaN(date.getTime()) ? null : date.toISOString();
+}
+
+function getFollowUpDueAt(option: FollowUpOption, customDate: string) {
+  const optionConfig = followUpOptions.find((item) => item.value === option);
+
+  if (!optionConfig) {
+    return null;
+  }
+
+  return optionConfig.days === null
+    ? getCustomDateIso(customDate)
+    : addDaysIso(optionConfig.days);
+}
+
+function formatFollowUpDueDate(isoString: string, language: Language) {
+  const date = new Date(isoString);
+
+  if (Number.isNaN(date.getTime())) {
+    return isoString;
+  }
+
+  return date.toLocaleDateString(language === "es" ? "es-US" : "en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
 function QuoteLimitModal({
   payload,
   usage,
@@ -392,6 +487,7 @@ function ProposalPreviewModal({
   onDownloadPdf,
   onSendEmail,
   onSaveClient,
+  onCreateFollowUp,
 }: {
   proposal: ProposalPayload;
   copied: boolean;
@@ -400,14 +496,21 @@ function ProposalPreviewModal({
   onCopy: () => void;
   onDownloadPdf: () => void;
   onSendEmail: () => void;
-  onSaveClient: (input: ClientCreateInput) => Promise<boolean>;
+  onSaveClient: (input: ClientCreateInput) => Promise<ClientSummary | null>;
+  onCreateFollowUp: (input: FollowUpCreateInput) => Promise<boolean>;
 }) {
   const t = useT();
   const [clientForm, setClientForm] = useState<ClientFormState>(emptyClientForm);
+  const [savedClientId, setSavedClientId] = useState<string | null>(null);
   const [clientSaving, setClientSaving] = useState(false);
   const [clientSaveMessage, setClientSaveMessage] = useState<string | null>(null);
+  const [followUpOption, setFollowUpOption] = useState<FollowUpOption>("three_days");
+  const [customFollowUpDate, setCustomFollowUpDate] = useState("");
+  const [followUpSaving, setFollowUpSaving] = useState(false);
+  const [followUpMessage, setFollowUpMessage] = useState<string | null>(null);
   const whatsappHref = buildWhatsAppShareHref(proposal.message_text, clientForm.phone);
   const smsHref = buildSmsShareHref(proposal.message_text, clientForm.phone);
+  const proposalDatabaseId = proposal.database_proposal_id ?? "";
 
   function updateClientField(field: keyof ClientFormState, value: string) {
     setClientForm((current) => ({
@@ -421,13 +524,38 @@ function ProposalPreviewModal({
     setClientSaveMessage(null);
 
     try {
-      const saved = await onSaveClient({
+      const savedClient = await onSaveClient({
         ...clientForm,
         proposalId: proposal.proposal_id,
       });
-      setClientSaveMessage(saved ? t("client_saved") : t("client_save_failed"));
+      setSavedClientId(savedClient?.id ?? null);
+      setClientSaveMessage(savedClient ? t("client_saved") : t("client_save_failed"));
     } finally {
       setClientSaving(false);
+    }
+  }
+
+  async function handleCreateFollowUp() {
+    const dueAt = getFollowUpDueAt(followUpOption, customFollowUpDate);
+
+    if (!proposalDatabaseId || !dueAt) {
+      setFollowUpMessage(t("follow_up_failed"));
+      return;
+    }
+
+    setFollowUpSaving(true);
+    setFollowUpMessage(null);
+
+    try {
+      const saved = await onCreateFollowUp({
+        proposalId: proposalDatabaseId,
+        clientId: savedClientId,
+        dueAt,
+        note: proposal.subject,
+      });
+      setFollowUpMessage(saved ? t("follow_up_saved") : t("follow_up_failed"));
+    } finally {
+      setFollowUpSaving(false);
     }
   }
 
@@ -589,6 +717,57 @@ function ProposalPreviewModal({
           </div>
         </div>
 
+        <div className="mt-4 rounded-3xl border border-brand-cyan/20 bg-brand-cyan/10 p-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-xs uppercase tracking-[0.18em] text-brand-cyan">
+                {t("dashboard_follow_ups")}
+              </p>
+              <h3 className="mt-2 font-display text-xl text-white">
+                {t("follow_up_remind")}
+              </h3>
+            </div>
+            <Button
+              type="button"
+              onClick={handleCreateFollowUp}
+              disabled={followUpSaving || !proposalDatabaseId}
+            >
+              {followUpSaving ? t("follow_up_saving") : t("follow_up_set")}
+            </Button>
+          </div>
+          <div className="mt-4 grid gap-3 sm:grid-cols-4">
+            {followUpOptions.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                onClick={() => setFollowUpOption(option.value)}
+                className={cn(
+                  "rounded-2xl border px-4 py-3 text-sm font-semibold transition",
+                  followUpOption === option.value
+                    ? "border-brand-neon/50 bg-brand-neon/15 text-white"
+                    : "border-white/10 bg-white/5 text-brand-muted hover:border-brand-cyan/30 hover:text-white",
+                )}
+              >
+                {t(option.labelKey)}
+              </button>
+            ))}
+          </div>
+          {followUpOption === "custom" ? (
+            <div className="mt-3 max-w-xs">
+              <Input
+                type="date"
+                min={getTomorrowDateValue()}
+                value={customFollowUpDate}
+                onChange={(event) => setCustomFollowUpDate(event.target.value)}
+                aria-label={t("follow_up_custom_date")}
+              />
+            </div>
+          ) : null}
+          {followUpMessage ? (
+            <p className="mt-3 text-sm text-brand-text">{followUpMessage}</p>
+          ) : null}
+        </div>
+
         <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:justify-end">
           <Button type="button" onClick={onCopy}>
             {copied ? t("proposal_copied") : t("proposal_copy_text")}
@@ -649,14 +828,94 @@ function ClientsPanel({ clients }: { clients: ClientSummary[] }) {
   );
 }
 
+function FollowUpsPanel({
+  followUps,
+  completingFollowUpId,
+  onComplete,
+}: {
+  followUps: FollowUpSummary[];
+  completingFollowUpId: string | null;
+  onComplete: (followUpId: string) => Promise<void>;
+}) {
+  const { language, t } = useLanguage();
+
+  return (
+    <section className="surface-gradient premium-border rounded-3xl p-6">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="text-xs uppercase tracking-[0.18em] text-brand-neon">
+            {t("dashboard_follow_ups")}
+          </p>
+          <h2 className="mt-2 font-display text-2xl text-white">{t("dashboard_follow_ups")}</h2>
+        </div>
+        <p className="max-w-xl text-sm leading-7 text-brand-muted">
+          {t("dashboard_follow_ups_description")}
+        </p>
+      </div>
+
+      {followUps.length ? (
+        <div className="mt-5 grid gap-3 lg:grid-cols-2">
+          {followUps.map((followUp) => {
+            const clientName = followUp.clientName || t("follow_up_no_client");
+
+            return (
+              <div
+                key={followUp.id}
+                className="rounded-2xl border border-white/10 bg-white/5 p-4"
+              >
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div>
+                    <p className="font-medium text-white">{clientName}</p>
+                    {followUp.clientContact ? (
+                      <p className="mt-1 text-sm text-brand-muted">{followUp.clientContact}</p>
+                    ) : null}
+                    <p className="mt-3 text-sm text-brand-text">
+                      {t("follow_up_due")}: {formatFollowUpDueDate(followUp.dueAt, language)}
+                    </p>
+                    {typeof followUp.proposalTotal === "number" ? (
+                      <p className="mt-1 text-sm text-brand-muted">
+                        {t("follow_up_total")}: ${followUp.proposalTotal}
+                      </p>
+                    ) : null}
+                    {followUp.note ? (
+                      <p className="mt-2 text-xs leading-6 text-brand-muted">{followUp.note}</p>
+                    ) : null}
+                  </div>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => void onComplete(followUp.id)}
+                    disabled={completingFollowUpId === followUp.id}
+                  >
+                    {completingFollowUpId === followUp.id
+                      ? t("follow_up_marking_done")
+                      : t("follow_up_mark_done")}
+                  </Button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        <p className="mt-5 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-brand-muted">
+          {t("dashboard_follow_ups_empty")}
+        </p>
+      )}
+    </section>
+  );
+}
+
 export function DashboardShell({
   initialUsage,
   initialRecentQuotes,
   initialClients,
+  initialFollowUps,
 }: {
   initialUsage: QuoteUsageSummary;
   initialRecentQuotes: SavedQuoteSummary[];
   initialClients: ClientSummary[];
+  initialFollowUps: FollowUpSummary[];
 }) {
   const { language, t } = useLanguage();
   const [prompt, setPrompt] = useState("");
@@ -678,6 +937,8 @@ export function DashboardShell({
   const [proposalEmailNotice, setProposalEmailNotice] = useState<string | null>(null);
   const [clients, setClients] = useState(initialClients);
   const [selectedClientId, setSelectedClientId] = useState("");
+  const [followUps, setFollowUps] = useState(initialFollowUps);
+  const [completingFollowUpId, setCompletingFollowUpId] = useState<string | null>(null);
   const samplePrompts = [
     t("chat_sample_prompt_office"),
     t("chat_sample_prompt_moveout"),
@@ -901,15 +1162,73 @@ export function DashboardShell({
       const payload = (await response.json().catch(() => null)) as unknown;
 
       if (!response.ok || !isClientCreateResponse(payload)) {
-        return false;
+        return null;
       }
 
       setClients((current) =>
         [payload.client, ...current.filter((client) => client.id !== payload.client.id)].slice(0, CLIENT_SELECTOR_LIMIT),
       );
+      return payload.client;
+    } catch {
+      return null;
+    }
+  }
+
+  async function handleCreateFollowUp(input: FollowUpCreateInput) {
+    try {
+      const response = await fetch("/api/follow-ups/create", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          proposal_id: input.proposalId,
+          client_id: input.clientId,
+          due_at: input.dueAt,
+          note: input.note,
+        }),
+        cache: "no-store",
+        credentials: "same-origin",
+      });
+      const payload = (await response.json().catch(() => null)) as unknown;
+
+      if (!response.ok || !isFollowUpCreateResponse(payload)) {
+        return false;
+      }
+
+      setFollowUps((current) =>
+        [payload.followUp, ...current.filter((followUp) => followUp.id !== payload.followUp.id)]
+          .sort((first, second) => new Date(first.dueAt).getTime() - new Date(second.dueAt).getTime())
+          .slice(0, 8),
+      );
       return true;
     } catch {
       return false;
+    }
+  }
+
+  async function handleCompleteFollowUp(followUpId: string) {
+    setCompletingFollowUpId(followUpId);
+
+    try {
+      const response = await fetch("/api/follow-ups/complete", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          follow_up_id: followUpId,
+        }),
+        cache: "no-store",
+        credentials: "same-origin",
+      });
+      const payload = (await response.json().catch(() => null)) as unknown;
+
+      if (response.ok && isFollowUpCompleteResponse(payload)) {
+        setFollowUps((current) => current.filter((followUp) => followUp.id !== payload.id));
+      }
+    } finally {
+      setCompletingFollowUpId(null);
     }
   }
 
@@ -1035,6 +1354,12 @@ export function DashboardShell({
         />
       </div>
 
+      <FollowUpsPanel
+        followUps={followUps}
+        completingFollowUpId={completingFollowUpId}
+        onComplete={handleCompleteFollowUp}
+      />
+
       <ClientsPanel clients={clients} />
 
       {quoteLimitModalError ? (
@@ -1055,6 +1380,7 @@ export function DashboardShell({
           onDownloadPdf={handleDownloadProposalPdf}
           onSendEmail={handleSendProposalEmail}
           onSaveClient={handleSaveClient}
+          onCreateFollowUp={handleCreateFollowUp}
         />
       ) : null}
     </>

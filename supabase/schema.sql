@@ -103,6 +103,125 @@ on public.saved_quotes
 for select
 using (auth.uid() = user_id);
 
+create extension if not exists pgcrypto;
+
+create table if not exists public.clients (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  name text,
+  phone text,
+  email text,
+  address text,
+  notes text,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
+);
+
+create index if not exists clients_user_created_at_idx
+on public.clients (user_id, created_at desc);
+
+alter table public.clients enable row level security;
+
+drop policy if exists "Users can view own clients" on public.clients;
+create policy "Users can view own clients"
+on public.clients
+for select
+using (auth.uid() = user_id);
+
+drop policy if exists "Users can insert own clients" on public.clients;
+create policy "Users can insert own clients"
+on public.clients
+for insert
+with check (auth.uid() = user_id);
+
+drop policy if exists "Users can update own clients" on public.clients;
+create policy "Users can update own clients"
+on public.clients
+for update
+using (auth.uid() = user_id)
+with check (auth.uid() = user_id);
+
+create table if not exists public.proposals (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  saved_quote_id bigint references public.saved_quotes(id) on delete set null,
+  client_id uuid references public.clients(id) on delete set null,
+  payload jsonb not null,
+  created_at timestamptz default now()
+);
+
+alter table public.proposals
+add column if not exists client_id uuid references public.clients(id) on delete set null;
+
+create index if not exists proposals_user_created_at_idx
+on public.proposals (user_id, created_at desc);
+
+create index if not exists proposals_client_id_idx
+on public.proposals (client_id);
+
+alter table public.proposals enable row level security;
+
+drop policy if exists "Users can view own proposals" on public.proposals;
+create policy "Users can view own proposals"
+on public.proposals
+for select
+using (auth.uid() = user_id);
+
+drop policy if exists "Users can insert own proposals" on public.proposals;
+create policy "Users can insert own proposals"
+on public.proposals
+for insert
+with check (auth.uid() = user_id);
+
+drop policy if exists "Users can update own proposals" on public.proposals;
+create policy "Users can update own proposals"
+on public.proposals
+for update
+using (auth.uid() = user_id)
+with check (auth.uid() = user_id);
+
+create table if not exists public.follow_ups (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  client_id uuid references public.clients(id) on delete set null,
+  proposal_id uuid references public.proposals(id) on delete cascade,
+  status text not null default 'pending',
+  due_at timestamptz not null,
+  note text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create index if not exists follow_ups_user_status_due_at_idx
+on public.follow_ups (user_id, status, due_at asc);
+
+create index if not exists follow_ups_client_id_idx
+on public.follow_ups (client_id);
+
+create index if not exists follow_ups_proposal_id_idx
+on public.follow_ups (proposal_id);
+
+alter table public.follow_ups enable row level security;
+
+drop policy if exists "Users can view own follow ups" on public.follow_ups;
+create policy "Users can view own follow ups"
+on public.follow_ups
+for select
+using (auth.uid() = user_id);
+
+drop policy if exists "Users can insert own follow ups" on public.follow_ups;
+create policy "Users can insert own follow ups"
+on public.follow_ups
+for insert
+with check (auth.uid() = user_id);
+
+drop policy if exists "Users can update own follow ups" on public.follow_ups;
+create policy "Users can update own follow ups"
+on public.follow_ups
+for update
+using (auth.uid() = user_id)
+with check (auth.uid() = user_id);
+
 create table if not exists public.trial_tracking (
   id bigint generated always as identity primary key,
   email text not null,

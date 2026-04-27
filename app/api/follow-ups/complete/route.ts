@@ -1,12 +1,10 @@
 import { NextResponse } from "next/server";
-import { isMockQuoteResponse } from "@/lib/mock-quote";
-import { isProposalPayload } from "@/lib/proposal-types";
-import { createProposalFromQuote } from "@/lib/proposals";
+import type { FollowUpCompleteResponse } from "@/lib/follow-up-types";
 import { createAdminSupabaseClient } from "@/lib/supabase/admin";
 import { getServerUser } from "@/lib/supabase/auth";
-import { DEFAULT_LANGUAGE, isLanguage } from "@/lib/translations";
 
-const MAX_PROPOSAL_BODY_BYTES = 1024;
+const MAX_FOLLOW_UP_COMPLETE_BODY_BYTES = 512;
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 export const runtime = "nodejs";
 
@@ -20,14 +18,6 @@ type ParsedJsonBodyResult =
       status: 400 | 413;
       message: string;
     };
-
-type SavedQuoteRow = {
-  quote_payload: unknown;
-};
-
-type InsertedProposalRow = {
-  id: string;
-};
 
 function buildNoStoreHeaders(extraHeaders?: HeadersInit) {
   const headers = new Headers({
@@ -60,6 +50,10 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === "object" && !Array.isArray(value);
 }
 
+function isUuid(value: unknown): value is string {
+  return typeof value === "string" && UUID_PATTERN.test(value);
+}
+
 function logUnexpectedFailure(context: string, error: unknown) {
   const detail =
     error instanceof Error
@@ -67,7 +61,7 @@ function logUnexpectedFailure(context: string, error: unknown) {
       : typeof error === "string"
         ? error
         : "Unknown error";
-  console.error(`[api/proposals/generate] ${context}`, detail);
+  console.error(`[api/follow-ups/complete] ${context}`, detail);
 }
 
 async function parseJsonBody(
@@ -118,19 +112,6 @@ async function parseJsonBody(
   }
 }
 
-function parseSavedQuoteId(value: unknown) {
-  if (typeof value === "number" && Number.isInteger(value) && value > 0) {
-    return value;
-  }
-
-  if (typeof value === "string" && /^\d+$/.test(value)) {
-    const parsed = Number(value);
-    return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : null;
-  }
-
-  return null;
-}
-
 export function OPTIONS() {
   return new NextResponse(null, {
     status: 204,
@@ -151,7 +132,7 @@ export async function POST(request: Request) {
   try {
     const { user } = await getServerUser();
     if (!user) {
-      return jsonError("Please log in to generate proposals.", 401, {
+      return jsonError("Please log in to update follow-ups.", 401, {
         Vary: "Cookie",
       });
     }
@@ -164,7 +145,7 @@ export async function POST(request: Request) {
     });
   }
 
-  const parsedBody = await parseJsonBody(request, MAX_PROPOSAL_BODY_BYTES);
+  const parsedBody = await parseJsonBody(request, MAX_FOLLOW_UP_COMPLETE_BODY_BYTES);
   if (!parsedBody.success) {
     return jsonError(parsedBody.message, parsedBody.status, {
       Vary: "Cookie",
@@ -177,79 +158,48 @@ export async function POST(request: Request) {
     });
   }
 
-  const savedQuoteId = parseSavedQuoteId(parsedBody.data.saved_quote_id);
-  if (savedQuoteId === null) {
-    return jsonError("Choose a saved quote before creating a proposal.", 400, {
+  const followUpId = isUuid(parsedBody.data.follow_up_id) ? parsedBody.data.follow_up_id : null;
+  if (!followUpId) {
+    return jsonError("Choose a valid follow-up.", 400, {
       Vary: "Cookie",
     });
   }
 
-  const language = isLanguage(parsedBody.data.language)
-    ? parsedBody.data.language
-    : DEFAULT_LANGUAGE;
-
   try {
     const supabase = createAdminSupabaseClient();
     const { data, error } = await supabase
-      .from("saved_quotes")
-      .select("quote_payload")
-      .eq("id", savedQuoteId)
+      .from("follow_ups")
+      .update({
+        status: "done",
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", followUpId)
       .eq("user_id", userId)
+      .eq("status", "pending")
+      .select("id")
       .maybeSingle();
 
     if (error) {
       throw new Error(error.message);
     }
 
-    const savedQuote = (data ?? null) as SavedQuoteRow | null;
-    if (!savedQuote || !isMockQuoteResponse(savedQuote.quote_payload)) {
-      return jsonError("Saved quote was not found.", 404, {
+    if (!data) {
+      return jsonError("Follow-up was not found.", 404, {
         Vary: "Cookie",
       });
     }
 
-    const proposal = createProposalFromQuote({
-      savedQuoteId,
-      quote: savedQuote.quote_payload,
-      language,
-    });
-
-    if (!isProposalPayload(proposal)) {
-      return jsonError("Unable to generate a valid proposal right now.", 502, {
-        Vary: "Cookie",
-      });
-    }
-
-    const { data: insertedProposal, error: insertError } = await supabase
-      .from("proposals")
-      .insert({
-        user_id: userId,
-        saved_quote_id: savedQuoteId,
-        payload: proposal,
-      })
-      .select("id")
-      .single();
-
-    if (insertError) {
-      throw new Error(insertError.message);
-    }
-
-    const inserted = (insertedProposal ?? null) as InsertedProposalRow | null;
-    if (!inserted?.id) {
-      throw new Error("Proposal insert did not return an id.");
-    }
-
-    const responseProposal = {
-      ...proposal,
-      database_proposal_id: inserted.id,
+    const response: FollowUpCompleteResponse = {
+      id: followUpId,
+      status: "done",
     };
 
-    return jsonResponse(responseProposal, 200, {
+    return jsonResponse(response, 200, {
       Vary: "Cookie",
     });
   } catch (error) {
-    logUnexpectedFailure("Proposal generation failure", error);
-    return jsonError("Unable to generate a proposal right now.", 500, {
+    logUnexpectedFailure("Follow-up complete failure", error);
+    return jsonError("Unable to update this follow-up right now.", 500, {
       Vary: "Cookie",
     });
   }
