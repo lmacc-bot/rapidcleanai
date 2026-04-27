@@ -8,7 +8,7 @@ import { isValidEmail, sanitizePlainText } from "@/lib/validation";
 const MAX_PROPOSAL_EMAIL_BODY_BYTES = 4 * 1024;
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const RESEND_EMAIL_ENDPOINT = "https://api.resend.com/emails";
-const DEFAULT_FROM_EMAIL = "RapidCleanAI <support@rapidcleanai.com>";
+const RESEND_TEST_FROM_EMAIL = "onboarding@resend.dev";
 
 export const runtime = "nodejs";
 
@@ -125,10 +125,6 @@ function getResendApiKey() {
   return process.env.RESEND_API_KEY ?? "";
 }
 
-function getFromEmail() {
-  return process.env.RESEND_FROM_EMAIL ?? DEFAULT_FROM_EMAIL;
-}
-
 function buildEmailSubject(proposal: ProposalPayload, language: Language) {
   return language === "es"
     ? `Propuesta de limpieza - ${proposal.subject}`
@@ -201,12 +197,16 @@ async function sendProposalEmail(input: {
   to: string;
   subject: string;
   text: string;
+  replyTo: string | null;
 }) {
   const apiKey = getResendApiKey();
+  const from = RESEND_TEST_FROM_EMAIL;
 
   if (!apiKey) {
     throw new Error("Missing RESEND_API_KEY.");
   }
+
+  console.log("[api/proposals/email] Resend from address", from);
 
   const response = await fetch(RESEND_EMAIL_ENDPOINT, {
     method: "POST",
@@ -215,10 +215,11 @@ async function sendProposalEmail(input: {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      from: getFromEmail(),
+      from,
       to: [input.to],
       subject: input.subject,
       text: input.text,
+      ...(input.replyTo ? { reply_to: input.replyTo } : {}),
     }),
   });
 
@@ -246,6 +247,7 @@ export async function POST(request: Request) {
   }
 
   let userId: string;
+  let replyToEmail: string | null = null;
 
   try {
     const { user } = await getServerUser();
@@ -256,6 +258,7 @@ export async function POST(request: Request) {
     }
 
     userId = user.id;
+    replyToEmail = user.email && isValidEmail(user.email) ? user.email : null;
   } catch (error) {
     logUnexpectedFailure("Session verification failure", error);
     return jsonError("Unable to verify your session right now.", 503, {
@@ -326,6 +329,7 @@ export async function POST(request: Request) {
         customMessage,
         language,
       }),
+      replyTo: replyToEmail,
     });
 
     return jsonResponse(
