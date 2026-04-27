@@ -16,6 +16,12 @@ import { useLanguage, useT } from "@/components/language-provider";
 import { ResultsPanel } from "@/components/results-panel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  isClientCreateResponse,
+  type ClientCreateInput,
+  type ClientSummary,
+} from "@/lib/client-types";
 import { isProposalPayload, type ProposalPayload } from "@/lib/proposal-types";
 import type { TranslationKey } from "@/lib/translations";
 
@@ -28,6 +34,22 @@ function buildInitialMessage(content: string): ChatMessage {
 }
 
 type Translator = (key: TranslationKey) => string;
+
+type ClientFormState = {
+  name: string;
+  phone: string;
+  email: string;
+  address: string;
+  notes: string;
+};
+
+const emptyClientForm: ClientFormState = {
+  name: "",
+  phone: "",
+  email: "",
+  address: "",
+  notes: "",
+};
 
 function buildCopyPayload(result: MockQuoteResponse, t: Translator) {
   return [
@@ -339,6 +361,7 @@ function ProposalPreviewModal({
   onCopy,
   onDownloadPdf,
   onSendEmail,
+  onSaveClient,
 }: {
   proposal: ProposalPayload;
   copied: boolean;
@@ -347,11 +370,36 @@ function ProposalPreviewModal({
   onCopy: () => void;
   onDownloadPdf: () => void;
   onSendEmail: () => void;
+  onSaveClient: (input: ClientCreateInput) => Promise<boolean>;
 }) {
   const t = useT();
-  const [sharePhone, setSharePhone] = useState("");
-  const whatsappHref = buildWhatsAppShareHref(proposal.message_text, sharePhone);
-  const smsHref = buildSmsShareHref(proposal.message_text, sharePhone);
+  const [clientForm, setClientForm] = useState<ClientFormState>(emptyClientForm);
+  const [clientSaving, setClientSaving] = useState(false);
+  const [clientSaveMessage, setClientSaveMessage] = useState<string | null>(null);
+  const whatsappHref = buildWhatsAppShareHref(proposal.message_text, clientForm.phone);
+  const smsHref = buildSmsShareHref(proposal.message_text, clientForm.phone);
+
+  function updateClientField(field: keyof ClientFormState, value: string) {
+    setClientForm((current) => ({
+      ...current,
+      [field]: value,
+    }));
+  }
+
+  async function handleSaveClient() {
+    setClientSaving(true);
+    setClientSaveMessage(null);
+
+    try {
+      const saved = await onSaveClient({
+        ...clientForm,
+        proposalId: proposal.proposal_id,
+      });
+      setClientSaveMessage(saved ? t("client_saved") : t("client_save_failed"));
+    } finally {
+      setClientSaving(false);
+    }
+  }
 
   return (
     <div
@@ -446,19 +494,53 @@ function ProposalPreviewModal({
         ) : null}
 
         <div className="mt-6 rounded-3xl border border-white/10 bg-white/5 p-4">
-          <label className="text-xs uppercase tracking-[0.18em] text-brand-muted" htmlFor="proposal-share-phone">
-            {t("proposal_phone_label")}
-          </label>
-          <Input
-            id="proposal-share-phone"
-            type="tel"
-            inputMode="tel"
-            value={sharePhone}
-            onChange={(event) => setSharePhone(event.target.value)}
-            placeholder={t("proposal_phone_placeholder")}
-            className="mt-3"
-          />
+          <p className="text-xs uppercase tracking-[0.18em] text-brand-muted">
+            {t("client_details_title")}
+          </p>
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            <Input
+              value={clientForm.name}
+              onChange={(event) => updateClientField("name", event.target.value)}
+              placeholder={t("client_name_placeholder")}
+              aria-label={t("client_name")}
+            />
+            <Input
+              type="tel"
+              inputMode="tel"
+              value={clientForm.phone}
+              onChange={(event) => updateClientField("phone", event.target.value)}
+              placeholder={t("client_phone_placeholder")}
+              aria-label={t("client_phone")}
+            />
+            <Input
+              type="email"
+              value={clientForm.email}
+              onChange={(event) => updateClientField("email", event.target.value)}
+              placeholder={t("client_email_placeholder")}
+              aria-label={t("client_email")}
+            />
+            <Input
+              value={clientForm.address}
+              onChange={(event) => updateClientField("address", event.target.value)}
+              placeholder={t("client_address_placeholder")}
+              aria-label={t("client_address")}
+            />
+            <Textarea
+              value={clientForm.notes}
+              onChange={(event) => updateClientField("notes", event.target.value)}
+              placeholder={t("client_notes_placeholder")}
+              aria-label={t("client_notes")}
+              className="sm:col-span-2"
+            />
+          </div>
+          {clientSaveMessage ? (
+            <p className="mt-3 text-sm text-brand-muted">{clientSaveMessage}</p>
+          ) : null}
+          <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <Button type="button" variant="secondary" onClick={handleSaveClient} disabled={clientSaving}>
+              {clientSaving ? t("client_saving") : t("client_save")}
+            </Button>
+            <div className="grid gap-3 sm:grid-cols-2">
             <a
               href={whatsappHref}
               target="_blank"
@@ -473,6 +555,7 @@ function ProposalPreviewModal({
             >
               {t("proposal_send_sms")}
             </a>
+            </div>
           </div>
         </div>
 
@@ -492,12 +575,57 @@ function ProposalPreviewModal({
   );
 }
 
+function ClientsPanel({ clients }: { clients: ClientSummary[] }) {
+  const t = useT();
+
+  return (
+    <section className="surface-gradient premium-border rounded-3xl p-6">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="text-xs uppercase tracking-[0.18em] text-brand-cyan">
+            {t("dashboard_clients")}
+          </p>
+          <h2 className="mt-2 font-display text-2xl text-white">{t("dashboard_clients")}</h2>
+        </div>
+        <p className="max-w-xl text-sm leading-7 text-brand-muted">
+          {t("dashboard_clients_description")}
+        </p>
+      </div>
+
+      {clients.length ? (
+        <div className="mt-5 grid gap-3 lg:grid-cols-5">
+          {clients.map((client) => {
+            const displayName = client.name || client.address || client.email || client.phone || t("dashboard_clients");
+            const contact = client.phone || client.email || t("client_contact_missing");
+
+            return (
+              <div key={client.id} className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                <p className="font-medium text-white">{displayName}</p>
+                <p className="mt-2 text-sm text-brand-muted">{contact}</p>
+                {client.address ? (
+                  <p className="mt-2 text-xs leading-6 text-brand-muted">{client.address}</p>
+                ) : null}
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        <p className="mt-5 rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-brand-muted">
+          {t("dashboard_clients_empty")}
+        </p>
+      )}
+    </section>
+  );
+}
+
 export function DashboardShell({
   initialUsage,
   initialRecentQuotes,
+  initialClients,
 }: {
   initialUsage: QuoteUsageSummary;
   initialRecentQuotes: SavedQuoteSummary[];
+  initialClients: ClientSummary[];
 }) {
   const { language, t } = useLanguage();
   const [prompt, setPrompt] = useState("");
@@ -517,6 +645,7 @@ export function DashboardShell({
   const [proposalLoading, setProposalLoading] = useState(false);
   const [proposalCopied, setProposalCopied] = useState(false);
   const [proposalEmailNotice, setProposalEmailNotice] = useState<string | null>(null);
+  const [clients, setClients] = useState(initialClients);
   const samplePrompts = [
     t("chat_sample_prompt_office"),
     t("chat_sample_prompt_moveout"),
@@ -719,6 +848,39 @@ export function DashboardShell({
     }
   }
 
+  async function handleSaveClient(input: ClientCreateInput) {
+    try {
+      const response = await fetch("/api/clients/create", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: input.name,
+          phone: input.phone,
+          email: input.email,
+          address: input.address,
+          notes: input.notes,
+          proposal_id: input.proposalId,
+        }),
+        cache: "no-store",
+        credentials: "same-origin",
+      });
+      const payload = (await response.json().catch(() => null)) as unknown;
+
+      if (!response.ok || !isClientCreateResponse(payload)) {
+        return false;
+      }
+
+      setClients((current) =>
+        [payload.client, ...current.filter((client) => client.id !== payload.client.id)].slice(0, 5),
+      );
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
   async function handleCopy() {
     if (!result || typeof navigator === "undefined") {
       return;
@@ -821,6 +983,8 @@ export function DashboardShell({
         />
       </div>
 
+      <ClientsPanel clients={clients} />
+
       {quoteLimitModalError ? (
         <QuoteLimitModal
           payload={quoteLimitModalError}
@@ -838,6 +1002,7 @@ export function DashboardShell({
           onCopy={handleCopyProposal}
           onDownloadPdf={handleDownloadProposalPdf}
           onSendEmail={handleSendProposalEmail}
+          onSaveClient={handleSaveClient}
         />
       ) : null}
     </>

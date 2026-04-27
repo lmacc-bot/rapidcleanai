@@ -5,6 +5,7 @@ import { GlowButton } from "@/components/glow-button";
 import { TrialCountdownBanner } from "@/components/trial-countdown-banner";
 import { T, TFormat } from "@/components/translated-text";
 import { Card, CardContent } from "@/components/ui/card";
+import { getLatestClients } from "@/lib/clients";
 import { getQuoteWorkspaceSnapshot } from "@/lib/quote-usage";
 import { getBillingAccessStatus } from "@/lib/supabase/access";
 import { getServerUser } from "@/lib/supabase/auth";
@@ -106,6 +107,7 @@ export default async function DashboardPage() {
   }
 
   const quoteWorkspace = await getQuoteWorkspaceSnapshot(user.id);
+  const latestClients = await getLatestClients(user.id);
 
   const { data: profile } = await supabase
     .from("profiles")
@@ -257,7 +259,11 @@ export default async function DashboardPage() {
         </Card>
       </section>
 
-      <DashboardShell initialUsage={quoteWorkspace.usage} initialRecentQuotes={quoteWorkspace.recentQuotes} />
+      <DashboardShell
+        initialUsage={quoteWorkspace.usage}
+        initialRecentQuotes={quoteWorkspace.recentQuotes}
+        initialClients={latestClients}
+      />
     </div>
   );
 }
