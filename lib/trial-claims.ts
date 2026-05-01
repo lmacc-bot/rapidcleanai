@@ -28,17 +28,6 @@ function normalizeEmailBase(email: string) {
   return email.trim().toLowerCase();
 }
 
-function maskEmailForLogs(email: string) {
-  const normalizedEmail = normalizeEmailBase(email);
-  const [localPart, domain] = normalizedEmail.split("@");
-
-  if (!localPart || !domain) {
-    return "invalid-email";
-  }
-
-  return `${localPart.slice(0, 2)}***@${domain}`;
-}
-
 export function normalizeTrialEmail(email: string) {
   const normalizedEmail = normalizeEmailBase(email);
   const [localPart, domain] = normalizedEmail.split("@");
@@ -117,10 +106,6 @@ export async function recordTrialClaim(input: TrialClaimInput): Promise<TrialCla
 
     if (error) {
       if (error.code === "23505") {
-        console.log("[trial_claims] Trial claim already exists", {
-          email: maskEmailForLogs(normalizedEmail),
-        });
-
         return {
           success: true,
           created: false,
@@ -133,10 +118,6 @@ export async function recordTrialClaim(input: TrialClaimInput): Promise<TrialCla
         message: error.message,
       };
     }
-
-    console.log("[trial_claims] Trial claim recorded", {
-      email: maskEmailForLogs(normalizedEmail),
-    });
 
     return {
       success: true,

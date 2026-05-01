@@ -13,7 +13,7 @@ export default function TermsPage() {
       <SectionHeading
         eyebrow="Terms"
         title="Terms of Service"
-        description="Foundational terms for the Phase 1 MVP launch."
+        description="Clear terms for using RapidCleanAI's AI-powered quote assistant."
       />
       <Card className="surface-gradient premium-border mt-8">
         <CardContent className="space-y-6 p-8 text-sm leading-8 text-brand-muted">
@@ -27,7 +27,7 @@ export default function TermsPage() {
             RapidCleanAI provides quote guidance to support your workflow, but you remain responsible for final pricing decisions, customer communication, and business outcomes.
           </p>
           <p>
-            Before public launch, have legal counsel review these terms so they match your refund policy, cancellation language, liability posture, and jurisdiction requirements.
+            Questions about these terms can be sent to support@rapidclean.ai.
           </p>
         </CardContent>
       </Card>

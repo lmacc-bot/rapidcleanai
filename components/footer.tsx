@@ -26,6 +26,9 @@ export function Footer() {
               <Link href="/privacy" className="transition hover:text-white">
                 <T k="footer_privacy" />
               </Link>
+              <Link href="/contact" className="transition hover:text-white">
+                <T k="footer_contact" />
+              </Link>
             </div>
           </div>
         </div>

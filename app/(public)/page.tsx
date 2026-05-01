@@ -170,7 +170,7 @@ export default function HomePage() {
                 <div className="flex items-center justify-between gap-3">
                   <p className="text-sm font-semibold text-white">{t("home_example_output")}</p>
                   <span className="rounded-full border border-brand-cyan/20 bg-brand-cyan/10 px-3 py-1 text-xs uppercase tracking-[0.18em] text-brand-cyan">
-                    {t("home_mvp_stub")}
+                    {t("home_guidance_label")}
                   </span>
                 </div>
                 <div className="mt-4 space-y-3 text-sm text-brand-muted">

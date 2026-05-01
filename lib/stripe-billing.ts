@@ -341,8 +341,6 @@ export async function createCheckoutSessionForPlan(
     metadata.trial_user_agent_hash = input.trialUserAgentHash;
   }
 
-  console.log("[checkout] success_url:", success_url);
-
   const session = await stripe.checkout.sessions.create({
     mode: "subscription",
     customer: customer.id,
@@ -361,11 +359,6 @@ export async function createCheckoutSessionForPlan(
       trial_period_days: input.allowTrial === false ? undefined : TRIAL_PERIOD_DAYS,
       metadata,
     },
-  });
-
-  console.log("[checkout] Stripe checkout session created", {
-    sessionId: session.id,
-    urlPresent: Boolean(session.url),
   });
 
   return session;

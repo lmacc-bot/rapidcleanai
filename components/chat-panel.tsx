@@ -91,7 +91,6 @@ export function ChatPanel({
   ];
 
   function handleExamplePromptClick(examplePrompt: string) {
-    console.log("[examples] prompt selected", examplePrompt);
     onPromptChange(examplePrompt);
   }
 
@@ -130,7 +129,7 @@ export function ChatPanel({
           </div>
           <div className="inline-flex items-center gap-2 rounded-full border border-brand-cyan/20 bg-brand-cyan/10 px-3 py-1.5 text-xs uppercase tracking-[0.18em] text-brand-cyan">
             <Sparkles className="size-3.5" />
-            {t("chat_mvp_assistant")}
+            {t("chat_quote_assistant")}
           </div>
         </div>
         <CardDescription className="text-base leading-7">

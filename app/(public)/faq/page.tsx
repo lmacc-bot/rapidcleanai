@@ -16,7 +16,7 @@ export default function FaqPage() {
       <SectionHeading
         eyebrow="FAQ"
         title="Answers for owners who want to launch fast and keep things simple."
-        description="Everything below is shaped around the Phase 1 MVP you can start selling immediately."
+        description="Everything below is shaped around professional quote guidance your team can use right away."
         align="center"
       />
       <div className="mx-auto mt-10 grid max-w-5xl gap-5 lg:grid-cols-2">

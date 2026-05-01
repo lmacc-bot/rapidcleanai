@@ -1,7 +1,7 @@
 const SAFE_CODE_PATTERN = /^[a-z_]+$/;
 
 const loginErrorMessages = {
-  auth_unavailable: "Authentication is temporarily unavailable. Please try again shortly.",
+  auth_unavailable: "Sign-in is temporarily unavailable. Please try again shortly.",
   invalid_credentials: "Unable to sign in with those credentials.",
   invalid_email: "Enter a valid email address.",
   missing_fields: "Email and password are required.",
@@ -9,7 +9,7 @@ const loginErrorMessages = {
 } as const;
 
 const signupErrorMessages = {
-  auth_unavailable: "Authentication is temporarily unavailable. Please try again shortly.",
+  auth_unavailable: "Account signup is temporarily unavailable. Please try again shortly.",
   email_taken: "An account already exists for that email address.",
   invalid_email: "Enter a valid email address.",
   invalid_name: "Enter your full name.",
@@ -22,7 +22,7 @@ const signupErrorMessages = {
 const infoMessages = {
   signup_success: "Account created successfully. You can now access your dashboard.",
   signup_success_check_email:
-    "Account created. If email confirmation is enabled in Supabase, confirm your email before signing in.",
+    "Account created. Check your email if confirmation is required, then sign in.",
 } as const;
 
 function readSafeCode(value: string | string[] | undefined) {

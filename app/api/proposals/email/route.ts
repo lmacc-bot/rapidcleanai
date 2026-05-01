@@ -297,8 +297,6 @@ async function sendProposalEmail(input: {
     throw new Error("Missing RESEND_API_KEY.");
   }
 
-  console.log("[api/proposals/email] Resend from address", from);
-
   const response = await fetch(RESEND_EMAIL_ENDPOINT, {
     method: "POST",
     headers: {

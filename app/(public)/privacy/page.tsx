@@ -13,7 +13,7 @@ export default function PrivacyPage() {
       <SectionHeading
         eyebrow="Privacy"
         title="Privacy Policy"
-        description="A simple Phase 1 policy you can refine with legal counsel before launch."
+        description="How RapidCleanAI handles account, quote, and support information."
       />
       <Card className="surface-gradient premium-border mt-8">
         <CardContent className="space-y-6 p-8 text-sm leading-8 text-brand-muted">
@@ -27,7 +27,7 @@ export default function PrivacyPage() {
             We do not sell your personal information. We may share limited information with service providers such as hosting, authentication, analytics, and payment platforms when needed to run the service.
           </p>
           <p>
-            You can contact us to request access, correction, or deletion of your account information. Before launch, have legal counsel review this policy to match your exact business practices and jurisdiction requirements.
+            You can contact support@rapidclean.ai to request access, correction, or deletion of your account information.
           </p>
         </CardContent>
       </Card>

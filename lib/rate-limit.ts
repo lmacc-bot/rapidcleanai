@@ -18,7 +18,7 @@ const rateLimitStore = globalThis.__rapidcleanaiRateLimitStore ?? new Map<string
 globalThis.__rapidcleanaiRateLimitStore = rateLimitStore;
 
 export function checkRateLimit({ key, limit, windowMs }: RateLimitOptions) {
-  // MVP note: this limiter is instance-local. For production-scale, replace it with
+  // Note: this limiter is instance-local. For production-scale, replace it with
   // a shared store such as Redis/Upstash so limits apply consistently across instances.
   const now = Date.now();
   const existing = rateLimitStore.get(key);

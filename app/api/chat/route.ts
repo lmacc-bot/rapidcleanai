@@ -214,7 +214,6 @@ export async function POST(request: Request) {
   let quoteAllowance: Awaited<ReturnType<typeof checkQuoteGenerationAllowance>> | null = null;
 
   try {
-    console.log("[DEBUG] Using admin client for quote usage");
     quoteAllowance = await checkQuoteGenerationAllowance(userId);
   } catch (error) {
     logUnexpectedFailure("Quote usage verification failure", error);

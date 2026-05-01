@@ -13,7 +13,7 @@ import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
   title: "Features",
-  description: "Explore the core RapidCleanAI MVP features for faster quote turnaround and cleaner pricing.",
+  description: "Explore RapidCleanAI features for faster quote turnaround and cleaner pricing.",
 };
 
 const icons = [

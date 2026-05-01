@@ -9,7 +9,7 @@ export const siteConfig = {
     "cleaning business tools",
   ],
   pageSupportEmail: "support@rapidclean.ai",
-  footerSupportEmail: "support@rapidcleanai.com",
+  footerSupportEmail: "support@rapidclean.ai",
   location: "Raleigh, NC",
 };
 
@@ -87,7 +87,7 @@ export const benefitBullets = [
   "Quote more jobs without adding admin hours",
   "Protect margins with cleaner pricing discipline",
   "Stay responsive on desktop, tablet, and mobile",
-  "Keep your MVP stack simple enough to launch now",
+  "Keep your quote workflow simple enough for daily use",
 ];
 
 export const operatorFeedback = [
@@ -164,17 +164,17 @@ export const faqItems = [
   {
     question: "Do I need technical skills?",
     answer:
-      "No. This MVP keeps the workflow simple: sign in, enter quote details, and review the generated guidance.",
+      "No. RapidCleanAI keeps the workflow simple: sign in, enter quote details, and review professional quote guidance.",
   },
   {
     question: "Will it save my quotes?",
     answer:
-      "Phase 1 focuses on fast quoting and dashboard access. Persistent quote history can be added in a future release.",
+      "Yes. Generated quotes are saved to your account so you can review recent work and follow up with confidence.",
   },
   {
     question: "Is this for teams?",
     answer:
-      "The current MVP is designed for solo operators and small teams, with room to grow into multi-user workflows later.",
+      "RapidCleanAI is designed for solo operators and small teams, with room to support higher-volume workflows as you grow.",
   },
 ];
 

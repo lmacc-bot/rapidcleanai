@@ -223,7 +223,7 @@ function trackClientEvent(eventName: string, metadata: Record<string, unknown>) 
   }).catch(() => null);
 }
 
-function getApiErrorMessage(payload: unknown, t: Translator) {
+function getApiErrorMessage(payload: unknown, fallbackMessage: string) {
   if (isQuoteApiErrorPayload(payload)) {
     return payload.error;
   }
@@ -234,10 +234,21 @@ function getApiErrorMessage(payload: unknown, t: Translator) {
     "error" in payload &&
     typeof payload.error === "string"
   ) {
-    return payload.error;
+    const rawError = payload.error;
+    const normalizedError = rawError.toLowerCase();
+    const technicalError =
+      normalizedError.includes("invalid json") ||
+      normalizedError.includes("invalid request") ||
+      normalizedError.includes("request body") ||
+      normalizedError.includes("request payload") ||
+      normalizedError.includes("endpoint") ||
+      normalizedError.includes("valid quote") ||
+      normalizedError.includes("valid proposal");
+
+    return technicalError ? fallbackMessage : rawError;
   }
 
-  return t("results_generate_failed");
+  return fallbackMessage;
 }
 
 function readNullableNumberHeader(value: string | null) {
@@ -1120,7 +1131,7 @@ export function DashboardShell({
           }
         }
 
-        throw new Error(getApiErrorMessage(payload, t));
+        throw new Error(getApiErrorMessage(payload, t("results_generate_failed")));
       }
 
       if (!isMockQuoteResponse(payload)) {
@@ -1136,7 +1147,7 @@ export function DashboardShell({
         {
           id: `assistant-${Date.now()}`,
           role: "assistant",
-          content: t("results_mock_ready").replace(
+          content: t("results_quote_ready").replace(
             "{amount}",
             String(payload.recommendedEstimate.recommended),
           ),
@@ -1144,7 +1155,7 @@ export function DashboardShell({
       ]);
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : t("results_endpoint_failed");
+        error instanceof Error ? error.message : t("results_quote_unavailable");
       setResult(null);
       setErrorMessage(message);
       setMessages((current) => [
@@ -1180,7 +1191,7 @@ export function DashboardShell({
           setApiLimitError(parsedApiError);
         }
 
-        throw new Error(getApiErrorMessage(payload, t));
+        throw new Error(getApiErrorMessage(payload, t("results_export_failed")));
       }
 
       const blob = await response.blob();
@@ -1230,7 +1241,7 @@ export function DashboardShell({
       const payload = (await response.json().catch(() => null)) as unknown;
 
       if (!response.ok) {
-        throw new Error(getApiErrorMessage(payload, t));
+        throw new Error(getApiErrorMessage(payload, t("proposal_generation_failed")));
       }
 
       if (!isProposalPayload(payload)) {
@@ -1382,7 +1393,6 @@ export function DashboardShell({
     setProposalEmailNotice(null);
 
     try {
-      console.log("[proposal email] sending email request");
       const response = await fetch("/api/proposals/email", {
         method: "POST",
         headers: {
@@ -1401,7 +1411,7 @@ export function DashboardShell({
       const payload = (await response.json().catch(() => null)) as unknown;
 
       if (!response.ok) {
-        throw new Error(getApiErrorMessage(payload, t));
+        throw new Error(getApiErrorMessage(payload, t("proposal_email_failed")));
       }
 
       setProposalEmailNotice(t("proposal_email_sent"));

@@ -118,7 +118,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
               Protected dashboard access for subscribed operators.
             </h2>
             <p className="text-base leading-8 text-brand-muted">
-              Sign in to access the quote workspace, mock AI results, and the Phase 1 dashboard built for speed.
+              Sign in to access your quote workspace, professional quote guidance, and client-ready proposal tools.
             </p>
             <GlowButton href={BILLING_ENTRY_HREF}>Start Now</GlowButton>
           </CardContent>
