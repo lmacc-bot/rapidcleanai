@@ -24,6 +24,11 @@ export const metadata: Metadata = {
   },
   description: siteConfig.description,
   keywords: siteConfig.keywords,
+  icons: {
+    icon: "/favicon.png",
+    shortcut: "/favicon.png",
+    apple: "/logo-sm.png",
+  },
   openGraph: {
     title: "RapidCleanAI",
     description: siteConfig.description,
