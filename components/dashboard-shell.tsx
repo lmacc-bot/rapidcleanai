@@ -1051,12 +1051,6 @@ export function DashboardShell({
   const [selectedClientId, setSelectedClientId] = useState("");
   const [followUps, setFollowUps] = useState(initialFollowUps);
   const [completingFollowUpId, setCompletingFollowUpId] = useState<string | null>(null);
-  const samplePrompts = [
-    t("chat_sample_prompt_deep"),
-    t("chat_sample_prompt_moveout"),
-    t("chat_sample_prompt_standard"),
-  ];
-
   useEffect(() => {
     setMessages((current) =>
       current.length === 1 && current[0]?.id === "welcome"
@@ -1473,7 +1467,6 @@ export function DashboardShell({
           onSubmit={submitPrompt}
           onLimitReached={handleLimitReached}
           messages={messages}
-          samplePrompts={samplePrompts}
           clients={clients}
           selectedClientId={selectedClientId}
           onClientSelect={handleClientSelect}

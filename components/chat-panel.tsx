@@ -26,7 +26,6 @@ type ChatPanelProps = {
   onSubmit: (value: string) => Promise<void> | void;
   onLimitReached: () => void;
   messages: ChatMessage[];
-  samplePrompts: string[];
   clients: ClientSummary[];
   selectedClientId: string;
   onClientSelect: (clientId: string) => void;
@@ -77,7 +76,6 @@ export function ChatPanel({
   onSubmit,
   onLimitReached,
   messages,
-  samplePrompts,
   clients,
   selectedClientId,
   onClientSelect,
@@ -86,6 +84,11 @@ export function ChatPanel({
 }: ChatPanelProps) {
   const { language, t } = useLanguage();
   const limitReached = usage.quoteLimit !== null && usage.quotesRemaining !== null && usage.quotesRemaining <= 0;
+  const examplePrompts = [
+    t("chat_sample_prompt_deep"),
+    t("chat_sample_prompt_moveout"),
+    t("chat_sample_prompt_standard"),
+  ];
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -207,18 +210,18 @@ export function ChatPanel({
               <li>- {t("chat_instruction_timing")}</li>
             </ul>
           </div>
-          <div className="space-y-3 rounded-3xl border border-white/10 bg-white/5 p-4">
+          <div className="space-y-3 rounded-3xl border border-brand-cyan/20 bg-brand-cyan/10 p-4 shadow-[0_14px_42px_rgba(39,210,255,0.08)]">
             <div>
-              <p className="text-xs uppercase tracking-[0.18em] text-brand-muted">{t("chat_sample_prompts")}</p>
+              <p className="text-xs uppercase tracking-[0.18em] text-brand-cyan">{t("chat_sample_prompts")}</p>
               <p className="mt-1 text-sm leading-6 text-brand-muted">{t("chat_sample_prompts_hint")}</p>
             </div>
-            <div className="flex flex-wrap gap-2">
-              {samplePrompts.map((sample) => (
+            <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+              {examplePrompts.map((sample) => (
                 <button
                   key={sample}
                   type="button"
                   onClick={() => onPromptChange(sample)}
-                  className="cursor-pointer rounded-full border border-brand-cyan/25 bg-brand-cyan/10 px-4 py-2 text-left text-sm font-medium text-brand-text transition hover:-translate-y-0.5 hover:border-brand-neon/50 hover:bg-brand-neon/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-neon/50"
+                  className="max-w-full cursor-pointer rounded-full border border-brand-cyan/30 bg-white/8 px-4 py-2 text-left text-sm font-medium leading-6 text-brand-text shadow-[0_10px_28px_rgba(34,255,136,0.08)] transition hover:-translate-y-0.5 hover:border-brand-neon/60 hover:bg-brand-neon/10 hover:text-white hover:shadow-[0_16px_40px_rgba(34,255,136,0.16)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-neon/50 sm:w-auto"
                 >
                   {sample}
                 </button>
