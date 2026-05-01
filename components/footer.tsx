@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Logo } from "@/components/logo";
+import { T } from "@/components/translated-text";
 import { siteConfig } from "@/lib/site";
 
 export function Footer() {
@@ -10,7 +11,7 @@ export function Footer() {
           <div className="max-w-xl space-y-4">
             <Logo />
             <p className="text-sm leading-7 text-brand-muted">
-              RapidCleanAI helps cleaning businesses move faster on quotes, protect margins, and launch a cleaner sales workflow.
+              <T k="footer_description" />
             </p>
           </div>
           <div className="grid gap-3 text-sm text-brand-muted">
@@ -20,10 +21,10 @@ export function Footer() {
             <p>{siteConfig.location}</p>
             <div className="flex flex-wrap gap-4">
               <Link href="/terms" className="transition hover:text-white">
-                Terms
+                <T k="footer_terms" />
               </Link>
               <Link href="/privacy" className="transition hover:text-white">
-                Privacy
+                <T k="footer_privacy" />
               </Link>
             </div>
           </div>

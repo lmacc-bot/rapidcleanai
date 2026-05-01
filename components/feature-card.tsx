@@ -4,8 +4,8 @@ import { cn } from "@/lib/utils";
 
 type FeatureCardProps = {
   icon: ReactNode;
-  title: string;
-  description: string;
+  title: ReactNode;
+  description: ReactNode;
   className?: string;
 };
 

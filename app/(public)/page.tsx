@@ -315,9 +315,13 @@ export default function HomePage() {
         <div className="mt-10">
           <PricingCard
             title={t("home_pricing_card_title")}
+            price={t("home_pricing_card_price")}
+            priceCaption={t("home_pricing_card_price_caption")}
             features={pricingFeatures}
             ctaLabel={t("home_pricing_card_cta")}
+            badgeLabel={t("home_pricing_card_badge")}
             description={t("home_pricing_card_description")}
+            footerText={t("home_pricing_card_footer")}
           />
         </div>
       </section>

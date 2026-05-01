@@ -52,8 +52,8 @@ export function Navbar(props: NavbarProps) {
   const variant = props.variant ?? "public";
   const dashboardUserLabel =
     props.variant === "dashboard"
-      ? props.userName ?? props.userEmail ?? "Account"
-      : "Account";
+      ? props.userName ?? props.userEmail ?? t("nav_account")
+      : t("nav_account");
   const logoutAction = props.variant === "dashboard" ? props.logoutAction : undefined;
 
   return (
@@ -107,7 +107,7 @@ export function Navbar(props: NavbarProps) {
               type="button"
               className="inline-flex size-11 items-center justify-center rounded-2xl border border-white/10 bg-white/5 text-brand-text transition hover:border-brand-neon/40 hover:text-white lg:hidden"
               onClick={() => setOpen((value) => !value)}
-              aria-label={open ? "Close menu" : "Open menu"}
+              aria-label={open ? t("nav_close_menu") : t("nav_open_menu")}
             >
               {open ? <X className="size-5" /> : <Menu className="size-5" />}
             </button>

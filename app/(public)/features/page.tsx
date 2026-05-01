@@ -4,10 +4,11 @@ import { Clock3, DollarSign, MessageSquareText, ShieldCheck, Smartphone } from "
 import { FeatureCard } from "@/components/feature-card";
 import { GlowButton } from "@/components/glow-button";
 import { SectionHeading } from "@/components/section-heading";
+import { T } from "@/components/translated-text";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { featureHighlights } from "@/lib/site";
 import { BILLING_ENTRY_HREF } from "@/lib/stripe";
+import type { TranslationKey } from "@/lib/translations";
 import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
@@ -23,26 +24,76 @@ const icons = [
   <Smartphone className="size-5" key="mobile" />,
 ];
 
+const featureHighlights = [
+  {
+    title: "features_highlight_1_title",
+    description: "features_highlight_1_description",
+  },
+  {
+    title: "features_highlight_2_title",
+    description: "features_highlight_2_description",
+  },
+  {
+    title: "features_highlight_3_title",
+    description: "features_highlight_3_description",
+  },
+  {
+    title: "features_highlight_4_title",
+    description: "features_highlight_4_description",
+  },
+  {
+    title: "features_highlight_5_title",
+    description: "features_highlight_5_description",
+  },
+] satisfies Array<{
+  title: TranslationKey;
+  description: TranslationKey;
+}>;
+
+const featureSupportItems = [
+  {
+    title: "features_support_1_title",
+    description: "features_support_1_description",
+  },
+  {
+    title: "features_support_2_title",
+    description: "features_support_2_description",
+  },
+  {
+    title: "features_support_3_title",
+    description: "features_support_3_description",
+  },
+] satisfies Array<{
+  title: TranslationKey;
+  description: TranslationKey;
+}>;
+
 export default function FeaturesPage() {
   return (
     <div className="container pb-20 pt-12">
       <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.9fr)]">
         <SectionHeading
-          eyebrow="Features"
-          title="Built to help cleaning businesses quote faster without losing pricing discipline."
-          description="This Phase 1 MVP stays focused on the features that support conversion, quoting speed, and subscription revenue."
+          eyebrow={<T k="features_eyebrow" />}
+          title={<T k="features_title" />}
+          description={<T k="features_description" />}
         />
         <Card className="surface-gradient premium-border">
           <CardContent className="space-y-4 p-6">
-            <p className="text-xs uppercase tracking-[0.18em] text-brand-cyan">Launch-ready MVP</p>
-            <p className="font-display text-3xl text-white">Clean UI, protected dashboard, trial-first subscriptions.</p>
+            <p className="text-xs uppercase tracking-[0.18em] text-brand-cyan">
+              <T k="features_launch_label" />
+            </p>
+            <p className="font-display text-3xl text-white">
+              <T k="features_launch_title" />
+            </p>
             <p className="text-sm leading-7 text-brand-muted">
-              Start with the simplest stack that gets customers into the product and into Stripe right away.
+              <T k="features_launch_description" />
             </p>
             <div className="flex flex-col gap-3 sm:flex-row">
-              <GlowButton href={BILLING_ENTRY_HREF}>Start Now</GlowButton>
+              <GlowButton href={BILLING_ENTRY_HREF}>
+                <T k="nav_start_now" />
+              </GlowButton>
               <Link href="/pricing" className={cn(buttonVariants({ variant: "secondary", size: "lg" }), "rounded-2xl")}>
-                View Pricing
+                <T k="home_secondary_cta" />
               </Link>
             </div>
           </CardContent>
@@ -54,34 +105,22 @@ export default function FeaturesPage() {
           <FeatureCard
             key={feature.title}
             icon={icons[index]}
-            title={feature.title}
-            description={feature.description}
+            title={<T k={feature.title} />}
+            description={<T k={feature.description} />}
           />
         ))}
       </div>
 
       <section className="mt-16 grid gap-5 lg:grid-cols-3">
-        {[
-          {
-            title: "Smart pricing guidance",
-            description:
-              "Use guided inputs and structured quote output to keep every response cleaner and more consistent.",
-          },
-          {
-            title: "Customer-ready messages",
-            description:
-              "Take the friction out of follow-up by generating a clear, polished response you can quickly send.",
-          },
-          {
-            title: "Mobile-friendly dashboard",
-            description:
-              "The app keeps the layout usable in the field so quotes are not trapped at a desktop.",
-          },
-        ].map((item) => (
+        {featureSupportItems.map((item) => (
           <Card key={item.title} className="surface-gradient premium-border">
             <CardContent className="p-6">
-              <h3 className="font-display text-2xl text-white">{item.title}</h3>
-              <p className="mt-3 text-sm leading-7 text-brand-muted">{item.description}</p>
+              <h3 className="font-display text-2xl text-white">
+                <T k={item.title} />
+              </h3>
+              <p className="mt-3 text-sm leading-7 text-brand-muted">
+                <T k={item.description} />
+              </p>
             </CardContent>
           </Card>
         ))}

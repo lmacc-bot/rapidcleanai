@@ -167,25 +167,6 @@ export function ChatPanel({
           </div>
         </div>
 
-        <div className="space-y-3">
-          <div>
-            <p className="text-xs uppercase tracking-[0.18em] text-brand-muted">{t("chat_sample_prompts")}</p>
-            <p className="mt-1 text-sm leading-6 text-brand-muted">{t("chat_sample_prompts_hint")}</p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {samplePrompts.map((sample) => (
-              <button
-                key={sample}
-                type="button"
-                onClick={() => onPromptChange(sample)}
-                className="rounded-full border border-white/10 bg-white/5 px-4 py-2 text-left text-sm text-brand-muted transition hover:border-brand-neon/30 hover:text-white"
-              >
-                {sample}
-              </button>
-            ))}
-          </div>
-        </div>
-
         <form className="space-y-4" onSubmit={handleSubmit}>
           <div className="space-y-2">
             <label
@@ -225,6 +206,24 @@ export function ChatPanel({
               <li>- {t("chat_instruction_condition")}</li>
               <li>- {t("chat_instruction_timing")}</li>
             </ul>
+          </div>
+          <div className="space-y-3 rounded-3xl border border-white/10 bg-white/5 p-4">
+            <div>
+              <p className="text-xs uppercase tracking-[0.18em] text-brand-muted">{t("chat_sample_prompts")}</p>
+              <p className="mt-1 text-sm leading-6 text-brand-muted">{t("chat_sample_prompts_hint")}</p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {samplePrompts.map((sample) => (
+                <button
+                  key={sample}
+                  type="button"
+                  onClick={() => onPromptChange(sample)}
+                  className="cursor-pointer rounded-full border border-brand-cyan/25 bg-brand-cyan/10 px-4 py-2 text-left text-sm font-medium text-brand-text transition hover:-translate-y-0.5 hover:border-brand-neon/50 hover:bg-brand-neon/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-neon/50"
+                >
+                  {sample}
+                </button>
+              ))}
+            </div>
           </div>
           <Textarea
             value={prompt}

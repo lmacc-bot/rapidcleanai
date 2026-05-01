@@ -69,7 +69,7 @@ export function useT() {
 }
 
 export function LanguageToggle({ className }: { className?: string }) {
-  const { language, setLanguage } = useLanguage();
+  const { language, setLanguage, t } = useLanguage();
 
   return (
     <div
@@ -77,7 +77,7 @@ export function LanguageToggle({ className }: { className?: string }) {
         "inline-flex rounded-full border border-white/10 bg-white/5 p-1 text-xs font-semibold uppercase tracking-[0.14em]",
         className,
       )}
-      aria-label="Language selector"
+      aria-label={t("language_selector")}
     >
       {(["en", "es"] as Language[]).map((option) => (
         <button

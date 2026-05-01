@@ -5,23 +5,27 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { BILLING_ENTRY_HREF } from "@/lib/stripe";
 
 type PricingCardProps = {
-  title?: string;
-  price?: string;
+  title: string;
+  price: string;
+  priceCaption: string;
   features: string[];
   className?: string;
-  ctaLabel?: string;
-  badgeLabel?: string;
-  description?: string;
+  ctaLabel: string;
+  badgeLabel: string;
+  description: string;
+  footerText: string;
 };
 
 export function PricingCard({
-  title = "Pro Plan",
-  price = "14-Day Trial",
+  title,
+  price,
+  priceCaption,
   features,
   className,
-  ctaLabel = "Choose Your Plan",
-  badgeLabel = "Full-Access Trial",
-  description = "Start with a 14-day full-access trial, then stay subscribed on Starter, Pro, or Elite without being forced to cancel.",
+  ctaLabel,
+  badgeLabel,
+  description,
+  footerText,
 }: PricingCardProps) {
   return (
     <Card className={`surface-gradient premium-border card-sheen ${className ?? ""}`}>
@@ -33,7 +37,7 @@ export function PricingCard({
           </div>
           <div className="rounded-2xl border border-brand-neon/20 bg-brand-neon/10 px-4 py-3 text-right">
             <div className="font-display text-4xl font-semibold text-brand-neon">{price}</div>
-            <div className="text-sm text-brand-muted">choose your billed plan in Stripe</div>
+            <div className="text-sm text-brand-muted">{priceCaption}</div>
           </div>
         </div>
         <p className="max-w-2xl text-brand-muted">
@@ -52,7 +56,7 @@ export function PricingCard({
       </CardContent>
       <CardFooter className="relative flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="text-sm text-brand-muted">
-          Start with full Elite-level trial access. Change plans anytime in Stripe Billing Portal.
+          {footerText}
         </div>
         <GlowButton href={BILLING_ENTRY_HREF}>{ctaLabel}</GlowButton>
       </CardFooter>

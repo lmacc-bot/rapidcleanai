@@ -1052,9 +1052,9 @@ export function DashboardShell({
   const [followUps, setFollowUps] = useState(initialFollowUps);
   const [completingFollowUpId, setCompletingFollowUpId] = useState<string | null>(null);
   const samplePrompts = [
-    t("chat_sample_prompt_office"),
-    t("chat_sample_prompt_moveout"),
     t("chat_sample_prompt_deep"),
+    t("chat_sample_prompt_moveout"),
+    t("chat_sample_prompt_standard"),
   ];
 
   useEffect(() => {

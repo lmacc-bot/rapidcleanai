@@ -12,6 +12,13 @@ export const translations = {
     nav_billing: "Billing",
     nav_account: "Account",
     nav_logout: "Logout",
+    nav_open_menu: "Open menu",
+    nav_close_menu: "Close menu",
+    language_selector: "Language selector",
+    footer_description:
+      "RapidCleanAI helps cleaning businesses move faster on quotes, protect margins, and launch a cleaner sales workflow.",
+    footer_terms: "Terms",
+    footer_privacy: "Privacy",
     home_badge: "Phase 1 MVP",
     home_headline: "Quote Cleaning Jobs Faster. Price Them More Profitably.",
     home_subheadline:
@@ -100,9 +107,14 @@ export const translations = {
     home_pricing_description:
       "Let customers choose Starter, Pro, or Elite, then retain them with upgrades and downgrades instead of forcing cancellation.",
     home_pricing_card_title: "Flexible Subscription Flow",
+    home_pricing_card_badge: "Full-Access Trial",
+    home_pricing_card_price: "$19-$79/mo",
+    home_pricing_card_price_caption: "choose your billed plan in Stripe",
     home_pricing_card_cta: "Compare Plans",
     home_pricing_card_description:
       "Every new account starts with a 14-day full-access trial. After that, customers stay on the selected plan and can change it anytime in Billing Portal.",
+    home_pricing_card_footer:
+      "Start with full Elite-level trial access. Change plans anytime in Stripe Billing Portal.",
     pricing_feature_unlimited: "Unlimited quote sessions",
     pricing_feature_guidance: "Smart pricing guidance",
     pricing_feature_messages: "Customer-ready messages",
@@ -118,11 +130,17 @@ export const translations = {
     pricing_description:
       "Start with 14 days of full-access Elite features. Choose the plan that fits before your trial ends.",
     pricing_starter_label: "For testing the waters",
-    pricing_starter_description: "A simple entry plan for occasional quotes.",
-    pricing_pro_label: "Most Popular",
+    pricing_starter_description: "A deliberately limited plan for occasional quotes.",
+    pricing_starter_plan_note: "Starter keeps costs low, with tighter quote, history, and export limits.",
+    pricing_pro_label: "Best for most teams",
     pricing_pro_description: "Best for cleaning businesses that quote jobs daily.",
+    pricing_pro_plan_note: "Most cleaning businesses choose Pro.",
     pricing_elite_label: "For power users",
-    pricing_elite_description: "Maximum quoting power for high-volume teams.",
+    pricing_elite_description: "Premium quoting power for high-volume teams.",
+    pricing_elite_plan_note: "Elite is built for higher volume, full history, exports, and the fastest responses.",
+    pricing_best_value: "Best Value",
+    pricing_monthly_period: "/mo",
+    pricing_trial_price_caption: "{days}-day full-access trial",
     pricing_days: "days",
     pricing_trial_days: "full access trial",
     pricing_start_starter: "Start Starter Trial",
@@ -151,6 +169,39 @@ export const translations = {
     pricing_faq_3_question: "Does it work on mobile?",
     pricing_faq_3_answer:
       "Yes. The dashboard is built to work cleanly on phones, tablets, and desktop browsers.",
+    features_eyebrow: "Features",
+    features_title:
+      "Built to help cleaning businesses quote faster without losing pricing discipline.",
+    features_description:
+      "This Phase 1 MVP stays focused on the features that support conversion, quoting speed, and subscription revenue.",
+    features_launch_label: "Launch-ready MVP",
+    features_launch_title: "Clean UI, protected dashboard, trial-first subscriptions.",
+    features_launch_description:
+      "Start with the simplest stack that gets customers into the product and into Stripe right away.",
+    features_highlight_1_title: "Smart pricing guidance",
+    features_highlight_1_description:
+      "Get structured quote suggestions designed to keep pricing fast, consistent, and margin-aware.",
+    features_highlight_2_title: "Customer-ready messages",
+    features_highlight_2_description:
+      "Turn messy scope notes into a polished response your team can send with minimal editing.",
+    features_highlight_3_title: "Faster response times",
+    features_highlight_3_description:
+      "Answer quote requests while leads are still engaged instead of chasing them hours later.",
+    features_highlight_4_title: "Margin protection",
+    features_highlight_4_description:
+      "Use cleaner guardrails and assumptions so discounting feels intentional instead of reactive.",
+    features_highlight_5_title: "Mobile-friendly dashboard",
+    features_highlight_5_description:
+      "Stacked layouts and tap-friendly controls make it practical to quote jobs from the field.",
+    features_support_1_title: "Smart pricing guidance",
+    features_support_1_description:
+      "Use guided inputs and structured quote output to keep every response cleaner and more consistent.",
+    features_support_2_title: "Customer-ready messages",
+    features_support_2_description:
+      "Take the friction out of follow-up by generating a clear, polished response you can quickly send.",
+    features_support_3_title: "Mobile-friendly dashboard",
+    features_support_3_description:
+      "The app keeps the layout usable in the field so quotes are not trapped at a desktop.",
     dashboard_label: "Dashboard",
     dashboard_welcome: "Welcome back",
     dashboard_fallback_name: "there",
@@ -218,9 +269,10 @@ export const translations = {
     chat_sample_prompt_office:
       "Weekly office clean for 4,000 sq ft, 3 restrooms, 2 break rooms, quote needed this week.",
     chat_sample_prompt_moveout:
-      "Move-out clean for a 2 bed / 2 bath apartment with inside oven and fridge.",
+      "Move-out clean: empty 1,800 sqft home with oven and fridge",
     chat_sample_prompt_deep:
-      "Deep clean for 2,100 sq ft home with pet hair, interior windows, and rush scheduling.",
+      "Deep clean: 3 bed / 2 bath, 2,100 sqft, pet hair",
+    chat_sample_prompt_standard: "Standard weekly clean: 2,000 sqft home",
     chat_placeholder:
       "Example: Deep clean for a 3 bed / 2 bath home, 2,100 sq ft, pet hair, inside fridge requested, quote needed by tomorrow.",
     chat_send: "Send",
@@ -404,6 +456,13 @@ export const translations = {
     nav_billing: "Facturacion",
     nav_account: "Cuenta",
     nav_logout: "Cerrar sesion",
+    nav_open_menu: "Abrir menu",
+    nav_close_menu: "Cerrar menu",
+    language_selector: "Selector de idioma",
+    footer_description:
+      "RapidCleanAI ayuda a negocios de limpieza a cotizar mas rapido, proteger margenes y lanzar un flujo de ventas mas claro.",
+    footer_terms: "Terminos",
+    footer_privacy: "Privacidad",
     home_badge: "MVP fase 1",
     home_headline: "Cotiza trabajos de limpieza mas rapido. Protege mejor tus ganancias.",
     home_subheadline:
@@ -492,9 +551,14 @@ export const translations = {
     home_pricing_description:
       "Permite elegir Starter, Pro o Elite y retener clientes con upgrades o downgrades sin forzar cancelaciones.",
     home_pricing_card_title: "Flujo flexible de suscripcion",
+    home_pricing_card_badge: "Prueba con acceso completo",
+    home_pricing_card_price: "$19-$79/mes",
+    home_pricing_card_price_caption: "elige tu plan facturado en Stripe",
     home_pricing_card_cta: "Comparar planes",
     home_pricing_card_description:
       "Cada cuenta nueva empieza con una prueba completa de 14 dias. Despues, los clientes mantienen el plan elegido y pueden cambiarlo en Billing Portal.",
+    home_pricing_card_footer:
+      "Empieza con acceso completo nivel Elite durante la prueba. Cambia de plan cuando quieras en Stripe Billing Portal.",
     pricing_feature_unlimited: "Sesiones de cotizacion ilimitadas",
     pricing_feature_guidance: "Guia inteligente de precios",
     pricing_feature_messages: "Mensajes listos para el cliente",
@@ -510,11 +574,17 @@ export const translations = {
     pricing_description:
       "Empieza con 14 dias de funciones Elite completas. Elige el plan que encaja antes de que termine la prueba.",
     pricing_starter_label: "Para probar con calma",
-    pricing_starter_description: "Un plan de entrada simple para cotizaciones ocasionales.",
-    pricing_pro_label: "Mas popular",
+    pricing_starter_description: "Un plan intencionalmente limitado para cotizaciones ocasionales.",
+    pricing_starter_plan_note: "Starter mantiene el costo bajo, con limites mas ajustados de cotizaciones, historial y exportacion.",
+    pricing_pro_label: "Ideal para la mayoria",
     pricing_pro_description: "Ideal para negocios de limpieza que cotizan trabajos todos los dias.",
+    pricing_pro_plan_note: "La mayoria de negocios de limpieza eligen Pro.",
     pricing_elite_label: "Para usuarios avanzados",
-    pricing_elite_description: "Maxima potencia de cotizacion para equipos de alto volumen.",
+    pricing_elite_description: "Potencia premium de cotizacion para equipos de alto volumen.",
+    pricing_elite_plan_note: "Elite esta hecho para mayor volumen, historial completo, exportaciones y respuestas mas rapidas.",
+    pricing_best_value: "Mejor valor",
+    pricing_monthly_period: "/mes",
+    pricing_trial_price_caption: "prueba de {days} dias con acceso completo",
     pricing_days: "dias",
     pricing_trial_days: "prueba con acceso completo",
     pricing_start_starter: "Empezar prueba Starter",
@@ -543,6 +613,39 @@ export const translations = {
     pricing_faq_3_question: "Funciona en movil?",
     pricing_faq_3_answer:
       "Si. El panel esta disenado para funcionar bien en telefono, tablet y navegador de escritorio.",
+    features_eyebrow: "Funciones",
+    features_title:
+      "Creado para ayudar a negocios de limpieza a cotizar mas rapido sin perder disciplina de precios.",
+    features_description:
+      "Este MVP de fase 1 se enfoca en funciones que ayudan a convertir, cotizar rapido y generar ingresos por suscripcion.",
+    features_launch_label: "MVP listo para lanzar",
+    features_launch_title: "UI clara, panel protegido y suscripciones con prueba inicial.",
+    features_launch_description:
+      "Empieza con el stack mas simple para llevar clientes al producto y a Stripe de inmediato.",
+    features_highlight_1_title: "Guia inteligente de precios",
+    features_highlight_1_description:
+      "Recibe sugerencias estructuradas para cotizar rapido, con consistencia y conciencia de margen.",
+    features_highlight_2_title: "Mensajes listos para el cliente",
+    features_highlight_2_description:
+      "Convierte notas desordenadas en una respuesta pulida que tu equipo puede enviar con pocos cambios.",
+    features_highlight_3_title: "Respuestas mas rapidas",
+    features_highlight_3_description:
+      "Responde solicitudes mientras los leads siguen interesados, sin perseguirlos horas despues.",
+    features_highlight_4_title: "Proteccion de margen",
+    features_highlight_4_description:
+      "Usa limites y supuestos claros para que los descuentos sean intencionales, no reactivos.",
+    features_highlight_5_title: "Panel apto para movil",
+    features_highlight_5_description:
+      "Layouts apilados y controles tactiles hacen practico cotizar trabajos desde campo.",
+    features_support_1_title: "Guia inteligente de precios",
+    features_support_1_description:
+      "Usa entradas guiadas y resultados estructurados para mantener cada respuesta mas clara y consistente.",
+    features_support_2_title: "Mensajes listos para el cliente",
+    features_support_2_description:
+      "Reduce la friccion del seguimiento con una respuesta clara y pulida que puedes enviar rapido.",
+    features_support_3_title: "Panel apto para movil",
+    features_support_3_description:
+      "La app mantiene el layout usable en campo para que las cotizaciones no dependan de un escritorio.",
     dashboard_label: "Panel",
     dashboard_welcome: "Bienvenido de nuevo",
     dashboard_fallback_name: "equipo",
@@ -610,9 +713,10 @@ export const translations = {
     chat_sample_prompt_office:
       "Limpieza semanal de oficina de 4,000 pies cuadrados, 3 banos, 2 areas de descanso, cotizacion para esta semana.",
     chat_sample_prompt_moveout:
-      "Limpieza de mudanza para apartamento de 2 habitaciones y 2 banos con interior de horno y refrigerador.",
+      "Limpieza de mudanza: casa vacía de 1,800 pies² con horno y nevera",
     chat_sample_prompt_deep:
-      "Limpieza profunda para casa de 2,100 pies cuadrados con pelo de mascota, ventanas interiores y agenda urgente.",
+      "Limpieza profunda: 3 cuartos / 2 baños, 2,100 pies², mascotas",
+    chat_sample_prompt_standard: "Limpieza estándar semanal: casa de 2,000 pies²",
     chat_placeholder:
       "Ejemplo: Limpieza profunda para casa de 3 habitaciones y 2 banos, 2,100 pies cuadrados, pelo de mascota, interior de refrigerador, cotizacion para manana.",
     chat_send: "Enviar",

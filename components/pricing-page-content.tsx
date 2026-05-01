@@ -18,16 +18,19 @@ const pricingPositioning = {
     label: "pricing_starter_label",
     description: "pricing_starter_description",
     cta: "pricing_start_starter",
+    note: "pricing_starter_plan_note",
   },
   pro: {
     label: "pricing_pro_label",
     description: "pricing_pro_description",
     cta: "pricing_start_pro",
+    note: "pricing_pro_plan_note",
   },
   elite: {
     label: "pricing_elite_label",
     description: "pricing_elite_description",
     cta: "pricing_start_elite",
+    note: "pricing_elite_plan_note",
   },
 } satisfies Record<
   BillingPlanId,
@@ -35,8 +38,15 @@ const pricingPositioning = {
     label: TranslationKey;
     description: TranslationKey;
     cta: TranslationKey;
+    note: TranslationKey;
   }
 >;
+
+const pricingDisplayPrices = {
+  starter: "$19",
+  pro: "$49",
+  elite: "$79",
+} satisfies Record<BillingPlanId, string>;
 
 const pricingTrustItems = [
   "pricing_full_trial",
@@ -105,8 +115,10 @@ export function PricingPageContent() {
                 className={cn(
                   "surface-gradient premium-border",
                   isPro
-                    ? "glow-ring border-brand-neon/35 shadow-[0_24px_90px_rgba(34,255,136,0.14)] lg:-mt-4 lg:scale-[1.03]"
-                    : "border-white/10",
+                    ? "glow-ring border-brand-neon/60 shadow-[0_28px_110px_rgba(34,255,136,0.24)] lg:-mt-5 lg:scale-[1.05]"
+                    : planId === "elite"
+                      ? "border-brand-cyan/25"
+                      : "border-white/10 opacity-95",
                 )}
               >
                 <CardContent className={cn("space-y-6 p-7", isPro ? "lg:p-8" : null)}>
@@ -122,8 +134,8 @@ export function PricingPageContent() {
                       </p>
                       <h2 className="mt-3 font-display text-3xl text-white">{plan.name}</h2>
                       {isPro ? (
-                        <span className="mt-3 inline-flex rounded-full border border-brand-neon/25 bg-brand-neon/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-brand-neon">
-                          {t("pricing_pro_label")}
+                        <span className="mt-3 inline-flex rounded-full border border-brand-neon/40 bg-brand-neon/15 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-brand-neon shadow-glow">
+                          {t("pricing_best_value")}
                         </span>
                       ) : null}
                     </div>
@@ -135,13 +147,28 @@ export function PricingPageContent() {
                           : "border-brand-neon/20 bg-brand-neon/10",
                       )}
                     >
-                      <div className="font-display text-3xl font-semibold text-brand-neon">
-                        {TRIAL_PERIOD_DAYS} {t("pricing_days")}
+                      <div className={cn("font-display font-semibold text-brand-neon", isPro ? "text-5xl" : "text-4xl")}>
+                        {pricingDisplayPrices[planId]}
+                        <span className="ml-1 text-base font-medium text-brand-muted">{t("pricing_monthly_period")}</span>
                       </div>
-                      <div className="text-sm text-brand-muted">{t("pricing_trial_days")}</div>
+                      <div className="text-sm text-brand-muted">
+                        {t("pricing_trial_price_caption").replace("{days}", String(TRIAL_PERIOD_DAYS))}
+                      </div>
                     </div>
                   </div>
                   <p className="text-sm leading-7 text-brand-muted">{t(positioning.description)}</p>
+                  <p
+                    className={cn(
+                      "rounded-2xl border px-4 py-3 text-sm leading-6",
+                      isPro
+                        ? "border-brand-neon/25 bg-brand-neon/10 text-brand-text"
+                        : planId === "elite"
+                          ? "border-brand-cyan/20 bg-brand-cyan/10 text-brand-text"
+                          : "border-white/10 bg-white/5 text-brand-muted",
+                    )}
+                  >
+                    {t(positioning.note)}
+                  </p>
                   <ul className="grid gap-3 text-sm text-brand-text">
                     {pricingPlanHighlights[planId].map((highlight) => (
                       <li
@@ -152,7 +179,14 @@ export function PricingPageContent() {
                       </li>
                     ))}
                   </ul>
-                  <GlowButton href={getCheckoutStartHref(planId)} variant={isPro ? "primary" : "secondary"}>
+                  <GlowButton
+                    href={getCheckoutStartHref(planId)}
+                    variant={isPro ? "primary" : "secondary"}
+                    className={cn(
+                      "w-full",
+                      isPro ? "py-4 text-base shadow-[0_22px_65px_rgba(34,255,136,0.32)]" : null,
+                    )}
+                  >
                     {t(positioning.cta)}
                   </GlowButton>
                 </CardContent>
