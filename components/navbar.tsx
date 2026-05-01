@@ -61,7 +61,7 @@ export function Navbar(props: NavbarProps) {
       <div className="container">
         <div className="rounded-3xl border border-white/10 bg-[rgba(11,15,20,0.78)] px-4 py-3 backdrop-blur-xl shadow-[0_16px_48px_rgba(11,15,20,0.35)] sm:px-6">
           <div className="flex items-center justify-between gap-4">
-            <Logo href={variant === "dashboard" ? "/dashboard" : "/"} />
+            <Logo href={variant === "dashboard" ? "/dashboard" : "/"} priority />
 
             <nav className="hidden items-center gap-7 text-sm text-brand-muted lg:flex">
               {variant === "public" ? (
