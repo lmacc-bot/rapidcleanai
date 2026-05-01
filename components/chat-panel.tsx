@@ -1,7 +1,7 @@
 "use client";
 
 import type { FormEvent } from "react";
-import { MessageSquareText, SendHorizontal, Sparkles } from "lucide-react";
+import { ListChecks, MessageSquareText, SendHorizontal, Sparkles } from "lucide-react";
 import { useLanguage } from "@/components/language-provider";
 import type { ClientSummary } from "@/lib/client-types";
 import type { QuoteUsageSummary } from "@/lib/quote-limits";
@@ -168,7 +168,10 @@ export function ChatPanel({
         </div>
 
         <div className="space-y-3">
-          <p className="text-xs uppercase tracking-[0.18em] text-brand-muted">{t("chat_sample_prompts")}</p>
+          <div>
+            <p className="text-xs uppercase tracking-[0.18em] text-brand-muted">{t("chat_sample_prompts")}</p>
+            <p className="mt-1 text-sm leading-6 text-brand-muted">{t("chat_sample_prompts_hint")}</p>
+          </div>
           <div className="flex flex-wrap gap-2">
             {samplePrompts.map((sample) => (
               <button
@@ -209,6 +212,19 @@ export function ChatPanel({
                 {t("chat_client_autofill_hint")}
               </p>
             ) : null}
+          </div>
+          <div className="rounded-3xl border border-brand-neon/20 bg-brand-neon/10 p-4">
+            <div className="mb-3 flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-brand-neon">
+              <ListChecks className="size-4" />
+              {t("chat_instruction_title")}
+            </div>
+            <p className="text-sm leading-7 text-brand-text">{t("chat_instruction_intro")}</p>
+            <ul className="mt-3 grid gap-2 text-sm leading-6 text-brand-muted sm:grid-cols-2">
+              <li>- {t("chat_instruction_property")}</li>
+              <li>- {t("chat_instruction_scope")}</li>
+              <li>- {t("chat_instruction_condition")}</li>
+              <li>- {t("chat_instruction_timing")}</li>
+            </ul>
           </div>
           <Textarea
             value={prompt}

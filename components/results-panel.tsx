@@ -34,6 +34,10 @@ const money = new Intl.NumberFormat("en-US", {
   maximumFractionDigits: 0,
 });
 
+const number = new Intl.NumberFormat("en-US", {
+  maximumFractionDigits: 1,
+});
+
 type Translator = (key: TranslationKey) => string;
 
 function fillTemplate(template: string, values: Record<string, string | number>) {
@@ -86,6 +90,20 @@ function formatSavedQuoteDate(isoString: string, language: Language, t: Translat
     day: "numeric",
     hour: "numeric",
     minute: "2-digit",
+  });
+}
+
+function formatLaborHoursRange(
+  estimatedLaborHours: MockQuoteResponse["estimatedLaborHours"],
+  t: Translator,
+) {
+  if (!estimatedLaborHours) {
+    return t("results_labor_to_confirm");
+  }
+
+  return fillTemplate(t("results_labor_hours_range"), {
+    low: number.format(estimatedLaborHours.low),
+    high: number.format(estimatedLaborHours.high),
   });
 }
 
@@ -321,16 +339,45 @@ export function ResultsPanel({
 
             <div className="grid gap-4 lg:grid-cols-2">
               <div className="rounded-3xl border border-white/10 bg-white/5 p-5">
-                <h4 className="font-display text-xl text-white">{t("results_summary")}</h4>
-                <p className="mt-3 text-sm leading-7 text-brand-muted">{result.summary}</p>
+                <h4 className="font-display text-xl text-white">{t("results_why_price")}</h4>
+                <p className="mt-3 text-sm leading-7 text-brand-muted">
+                  {t("results_why_price_description")}
+                </p>
+                <div className="mt-5 rounded-2xl border border-white/10 bg-[rgba(11,15,20,0.58)] px-4 py-3">
+                  <p className="text-xs uppercase tracking-[0.16em] text-brand-muted">
+                    {t("results_labor_estimate")}
+                  </p>
+                  <p className="mt-2 text-sm font-medium text-white">
+                    {formatLaborHoursRange(result.estimatedLaborHours, t)}
+                  </p>
+                </div>
+                {result.breakdownLineItems?.length ? (
+                  <ul className="mt-4 space-y-3 text-sm leading-7 text-brand-muted">
+                    {result.breakdownLineItems.map((item) => (
+                      <li key={`${item.label}-${item.low}-${item.high}`}>
+                        <span className="font-medium text-brand-text">{item.label}</span>:{" "}
+                        {money.format(item.low)} - {money.format(item.high)}
+                        {item.note ? <span> ({item.note})</span> : null}
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="mt-4 text-sm leading-7 text-brand-muted">
+                    {t("results_why_price_fallback")}
+                  </p>
+                )}
               </div>
               <div className="rounded-3xl border border-white/10 bg-white/5 p-5">
-                <h4 className="font-display text-xl text-white">{t("results_customer_message")}</h4>
-                <p className="mt-3 text-sm leading-7 text-brand-muted">{result.customerMessage}</p>
+                <h4 className="font-display text-xl text-white">{t("results_summary")}</h4>
+                <p className="mt-3 text-sm leading-7 text-brand-muted">{result.summary}</p>
               </div>
             </div>
 
             <div className="grid gap-4 lg:grid-cols-2">
+              <div className="rounded-3xl border border-white/10 bg-white/5 p-5">
+                <h4 className="font-display text-xl text-white">{t("results_customer_message")}</h4>
+                <p className="mt-3 text-sm leading-7 text-brand-muted">{result.customerMessage}</p>
+              </div>
               <div className="rounded-3xl border border-white/10 bg-white/5 p-5">
                 <h4 className="font-display text-xl text-white">{t("results_scope")}</h4>
                 <ul className="mt-4 space-y-3 text-sm leading-7 text-brand-muted">
@@ -356,6 +403,24 @@ export function ResultsPanel({
                   <li key={item}>- {item}</li>
                 ))}
               </ul>
+            </div>
+
+            <div className="rounded-3xl border border-brand-neon/20 bg-brand-neon/10 p-5">
+              <h4 className="font-display text-xl text-white">{t("results_cta_title")}</h4>
+              <p className="mt-3 text-sm leading-7 text-brand-text">{t("results_cta_description")}</p>
+              <div className="mt-4">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  type="button"
+                  onClick={() => onCreateProposal(result.savedQuoteId)}
+                  disabled={!result.savedQuoteId || proposalLoading}
+                  title={!result.savedQuoteId ? t("proposal_saved_quote_required") : undefined}
+                >
+                  <Sparkles className="size-4" />
+                  {proposalLoading ? t("results_creating_proposal") : t("results_create_proposal")}
+                </Button>
+              </div>
             </div>
           </div>
         ) : null}

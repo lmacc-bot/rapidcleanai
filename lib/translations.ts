@@ -204,10 +204,17 @@ export const translations = {
       "Paste the job details, scope, frequency, special requests, and anything that affects pricing.",
     chat_mvp_assistant: "MVP Assistant",
     chat_recent_prompts: "Recent prompts",
-    chat_sample_prompts: "Sample prompts",
+    chat_sample_prompts: "Try an example",
+    chat_sample_prompts_hint: "Click one to fill the quote box.",
     chat_select_client: "Select Client",
     chat_new_client: "New Client",
     chat_client_autofill_hint: "Selecting a client can autofill the quote prompt with saved address and notes.",
+    chat_instruction_title: "What to include",
+    chat_instruction_intro: "Add a few details so the quote is useful on the first try.",
+    chat_instruction_property: "Size, bedrooms, bathrooms, or address",
+    chat_instruction_scope: "Standard, deep, move-out, office, or recurring",
+    chat_instruction_condition: "Pets, buildup, windows, fridge, oven, or add-ons",
+    chat_instruction_timing: "Preferred date, rush timing, or this week",
     chat_sample_prompt_office:
       "Weekly office clean for 4,000 sq ft, 3 restrooms, 2 break rooms, quote needed this week.",
     chat_sample_prompt_moveout:
@@ -251,7 +258,18 @@ export const translations = {
     results_customer_message: "Customer-ready message",
     results_scope: "Scope highlights",
     results_upsells: "Upsell suggestions",
+    results_why_price: "Why this price",
+    results_why_price_description:
+      "The estimate uses job size, cleaning type, condition, timing, and add-ons.",
+    results_labor_estimate: "Estimated labor",
+    results_labor_to_confirm: "To confirm",
+    results_labor_hours_range: "{low}-{high} hours",
+    results_why_price_fallback:
+      "This quote is based on the details provided and the recommended price range.",
     results_next_actions: "Next actions",
+    results_cta_title: "Ready to send it?",
+    results_cta_description:
+      "Create a proposal or copy the customer-ready message while the lead is still warm.",
     results_saved_history: "Saved quote history",
     results_saved_history_description:
       "RapidCleanAI saves each generated quote server-side and applies your current plan history rules automatically.",
@@ -578,10 +596,17 @@ export const translations = {
       "Pega los detalles del trabajo, alcance, frecuencia, solicitudes especiales y todo lo que afecte el precio.",
     chat_mvp_assistant: "Asistente MVP",
     chat_recent_prompts: "Prompts recientes",
-    chat_sample_prompts: "Ejemplos",
+    chat_sample_prompts: "Prueba un ejemplo",
+    chat_sample_prompts_hint: "Haz clic en uno para llenar el campo.",
     chat_select_client: "Seleccionar cliente",
     chat_new_client: "Nuevo cliente",
     chat_client_autofill_hint: "Seleccionar un cliente puede llenar el prompt con direccion y notas guardadas.",
+    chat_instruction_title: "Que incluir",
+    chat_instruction_intro: "Agrega algunos datos para que la cotizacion salga util desde el primer intento.",
+    chat_instruction_property: "Tamano, habitaciones, banos o direccion",
+    chat_instruction_scope: "Estandar, profunda, mudanza, oficina o recurrente",
+    chat_instruction_condition: "Mascotas, acumulacion, ventanas, refrigerador, horno o extras",
+    chat_instruction_timing: "Fecha preferida, urgencia o esta semana",
     chat_sample_prompt_office:
       "Limpieza semanal de oficina de 4,000 pies cuadrados, 3 banos, 2 areas de descanso, cotizacion para esta semana.",
     chat_sample_prompt_moveout:
@@ -625,7 +650,18 @@ export const translations = {
     results_customer_message: "Mensaje listo para el cliente",
     results_scope: "Puntos clave del alcance",
     results_upsells: "Sugerencias de venta adicional",
+    results_why_price: "Por que este precio",
+    results_why_price_description:
+      "La estimacion usa tamano, tipo de limpieza, condicion, tiempo y extras.",
+    results_labor_estimate: "Trabajo estimado",
+    results_labor_to_confirm: "Por confirmar",
+    results_labor_hours_range: "{low}-{high} horas",
+    results_why_price_fallback:
+      "Esta cotizacion se basa en los detalles enviados y el rango de precio recomendado.",
     results_next_actions: "Siguientes pasos",
+    results_cta_title: "Listo para enviarla?",
+    results_cta_description:
+      "Crea una propuesta o copia el mensaje para cliente mientras el lead sigue interesado.",
     results_saved_history: "Historial de cotizaciones",
     results_saved_history_description:
       "RapidCleanAI guarda cada cotizacion en el servidor y aplica automaticamente las reglas de historial de tu plan.",

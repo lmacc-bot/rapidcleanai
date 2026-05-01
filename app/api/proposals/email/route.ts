@@ -10,6 +10,15 @@ const MAX_PROPOSAL_EMAIL_BODY_BYTES = 4 * 1024;
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const RESEND_EMAIL_ENDPOINT = "https://api.resend.com/emails";
 const RESEND_TEST_FROM_EMAIL = "onboarding@resend.dev";
+const money = new Intl.NumberFormat("en-US", {
+  style: "currency",
+  currency: "USD",
+  maximumFractionDigits: 0,
+});
+
+const number = new Intl.NumberFormat("en-US", {
+  maximumFractionDigits: 1,
+});
 
 export const runtime = "nodejs";
 
@@ -126,10 +135,66 @@ function getResendApiKey() {
   return process.env.RESEND_API_KEY ?? "";
 }
 
+function singleLine(value: string) {
+  return value.replace(/\s+/g, " ").trim();
+}
+
+function getServiceLabel(proposal: ProposalPayload, language: Language) {
+  const fallback = language === "es" ? "servicio de limpieza" : "cleaning service";
+  const firstLabel = singleLine(proposal.line_items[0]?.label ?? "");
+
+  if (!firstLabel) {
+    return fallback;
+  }
+
+  const normalized = firstLabel.toLowerCase();
+  if (normalized === "base cleaning scope" || normalized === "alcance base de limpieza") {
+    return fallback;
+  }
+
+  return firstLabel;
+}
+
+function getIncludedServiceLines(proposal: ProposalPayload, language: Language) {
+  const fallback = language === "es" ? "Servicio de limpieza" : "Cleaning service";
+  const lines = proposal.line_items
+    .map((item) => singleLine(item.label))
+    .filter(Boolean)
+    .map((label) => {
+      const normalized = label.toLowerCase();
+
+      if (normalized === "base cleaning scope" || normalized === "alcance base de limpieza") {
+        return fallback;
+      }
+
+      return label;
+    });
+
+  return lines.length ? lines.map((line) => `- ${line}`) : [`- ${fallback}`];
+}
+
+function formatEstimatedDuration(hours: number | null, language: Language) {
+  if (hours === null) {
+    return language === "es" ? "Por confirmar" : "To confirm";
+  }
+
+  const formattedHours = number.format(hours);
+  const unit =
+    language === "es"
+      ? hours === 1
+        ? "hora"
+        : "horas"
+      : hours === 1
+        ? "hour"
+        : "hours";
+
+  return `${formattedHours} ${unit}`;
+}
+
 function buildEmailSubject(proposal: ProposalPayload, language: Language) {
   return language === "es"
-    ? `Propuesta de limpieza - ${proposal.subject}`
-    : `Cleaning proposal - ${proposal.subject}`;
+    ? `Cotizacion lista - ${money.format(proposal.total_price)}`
+    : `Quote Ready: ${getServiceLabel(proposal, language)} - ${money.format(proposal.total_price)}`;
 }
 
 function buildEmailText(input: {
@@ -139,16 +204,30 @@ function buildEmailText(input: {
   language: Language;
 }) {
   const { proposal, recipientName, customMessage, language } = input;
+  const serviceLines = getIncludedServiceLines(proposal, language);
+  const total = money.format(proposal.total_price);
+  const duration = formatEstimatedDuration(proposal.estimated_hours, language);
 
   if (language === "es") {
     return [
       recipientName ? `Hola ${recipientName},` : "Hola,",
       "",
-      customMessage || "Comparto la propuesta de limpieza para tu revision.",
+      customMessage || "Tu cotizacion de limpieza esta lista.",
       "",
-      proposal.message_text,
+      "Servicio incluido:",
+      ...serviceLines,
       "",
-      "Gracias por considerar RapidCleanAI. Si tienes preguntas o quieres ajustar el alcance, responde a este email y con gusto lo revisamos.",
+      `TOTAL: ${total}`,
+      `Duracion estimada: ${duration}`,
+      "",
+      "Detalles:",
+      "- Todos los suministros incluidos",
+      "- Horario flexible",
+      "",
+      "La disponibilidad es limitada esta semana.",
+      "",
+      "Responde a este mensaje para confirmar tu servicio.",
+      "Podemos reservar tu espacio en cuanto confirmes.",
       "",
       "Saludos,",
       "RapidCleanAI",
@@ -158,11 +237,22 @@ function buildEmailText(input: {
   return [
     recipientName ? `Hi ${recipientName},` : "Hi there,",
     "",
-    customMessage || "I'm sharing the cleaning proposal for your review.",
+    customMessage || "Your cleaning quote is ready.",
     "",
-    proposal.message_text,
+    "Service included:",
+    ...serviceLines,
     "",
-    "Thanks for considering RapidCleanAI. If you have questions or want to adjust the scope, reply to this email and we will be happy to review it.",
+    `TOTAL: ${total}`,
+    `Estimated duration: ${duration}`,
+    "",
+    "Details:",
+    "- All supplies included",
+    "- Flexible scheduling",
+    "",
+    "Availability is limited this week.",
+    "",
+    "Reply to this email or message me to confirm your booking.",
+    "We can reserve your spot as soon as you confirm.",
     "",
     "Best,",
     "RapidCleanAI",
