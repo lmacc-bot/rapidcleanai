@@ -203,30 +203,28 @@ export default function HomePage() {
       </section>
 
       <section className="container mt-24">
-        <div className="grid gap-10 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
-          <SectionHeading
-            eyebrow={t("home_solution_eyebrow")}
-            title={t("home_solution_title")}
-            description={t("home_solution_description")}
-          />
-          <div className="grid gap-5 md:grid-cols-2">
-            {homeSolutions.map((solution, index) => (
-              <FeatureCard
-                key={solution.title}
-                icon={
-                  index === 0 ? (
-                    <ShieldCheck className="size-5" />
-                  ) : index === 1 ? (
-                    <Clock3 className="size-5" />
-                  ) : (
-                    <Smartphone className="size-5" />
-                  )
-                }
-                title={solution.title}
-                description={solution.description}
-              />
-            ))}
-          </div>
+        <SectionHeading
+          eyebrow={t("home_solution_eyebrow")}
+          title={t("home_solution_title")}
+          description={t("home_solution_description")}
+        />
+        <div className="mt-10 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+          {homeSolutions.map((solution, index) => (
+            <FeatureCard
+              key={solution.title}
+              icon={
+                index === 0 ? (
+                  <ShieldCheck className="size-5" />
+                ) : index === 1 ? (
+                  <Clock3 className="size-5" />
+                ) : (
+                  <Smartphone className="size-5" />
+                )
+              }
+              title={solution.title}
+              description={solution.description}
+            />
+          ))}
         </div>
       </section>
 

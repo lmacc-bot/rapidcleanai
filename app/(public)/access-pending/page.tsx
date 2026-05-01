@@ -57,8 +57,8 @@ export default async function AccessPendingPage({ searchParams }: AccessPendingP
   const selectedPlanLabel = getBillingPlanLabel(selectedPlan);
 
   return (
-    <div className="container flex min-h-[calc(100vh-10rem)] items-center py-12">
-      <Card className="surface-gradient premium-border mx-auto w-full max-w-4xl overflow-hidden">
+    <div className="container min-h-[calc(100vh-10rem)] py-12">
+      <Card className="surface-gradient premium-border mx-auto w-full max-w-5xl overflow-hidden">
         <CardContent className="grid gap-8 p-8 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:p-10">
           <div className="space-y-6">
             <p className="text-xs uppercase tracking-[0.2em] text-brand-neon">Access status</p>
@@ -130,7 +130,7 @@ export default async function AccessPendingPage({ searchParams }: AccessPendingP
         </CardContent>
       </Card>
 
-      <div className="mx-auto mt-10 grid w-full max-w-6xl gap-5 lg:grid-cols-3">
+      <div className="mx-auto mt-10 grid w-full max-w-7xl gap-5 md:grid-cols-2 xl:grid-cols-3">
         {(Object.entries(BILLING_PLANS) as [keyof typeof BILLING_PLANS, (typeof BILLING_PLANS)[keyof typeof BILLING_PLANS]][]).map(
           ([planId, plan]) => {
             const isSelected = planId === selectedPlan;
@@ -140,7 +140,7 @@ export default async function AccessPendingPage({ searchParams }: AccessPendingP
                 key={planId}
                 className={`surface-gradient premium-border ${isSelected ? "glow-ring" : ""}`}
               >
-                <CardContent className="space-y-5 p-6">
+                <CardContent className="flex h-full flex-col space-y-5 p-6">
                   <div className="flex items-center justify-between gap-3">
                     <div>
                       <p className="text-xs uppercase tracking-[0.18em] text-brand-cyan">{plan.badge}</p>
@@ -163,7 +163,11 @@ export default async function AccessPendingPage({ searchParams }: AccessPendingP
                       </li>
                     ))}
                   </ul>
-                  <GlowButton href={getCheckoutStartHref(planId, checkoutOptions)} trailingIcon={false}>
+                  <GlowButton
+                    href={getCheckoutStartHref(planId, checkoutOptions)}
+                    trailingIcon={false}
+                    className="mt-auto w-full"
+                  >
                     {trialAlreadyUsed ? `Start ${plan.name} Plan` : `Start ${plan.name} Trial`}
                   </GlowButton>
                 </CardContent>

@@ -90,6 +90,11 @@ export function ChatPanel({
     t("chat_sample_prompt_standard"),
   ];
 
+  function handleExamplePromptClick(examplePrompt: string) {
+    console.log("[examples] prompt selected", examplePrompt);
+    onPromptChange(examplePrompt);
+  }
+
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
@@ -220,7 +225,7 @@ export function ChatPanel({
                 <button
                   key={sample}
                   type="button"
-                  onClick={() => onPromptChange(sample)}
+                  onClick={() => handleExamplePromptClick(sample)}
                   className="max-w-full cursor-pointer rounded-full border border-brand-cyan/30 bg-white/8 px-4 py-2 text-left text-sm font-medium leading-6 text-brand-text shadow-[0_10px_28px_rgba(34,255,136,0.08)] transition hover:-translate-y-0.5 hover:border-brand-neon/60 hover:bg-brand-neon/10 hover:text-white hover:shadow-[0_16px_40px_rgba(34,255,136,0.16)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-neon/50 sm:w-auto"
                 >
                   {sample}
