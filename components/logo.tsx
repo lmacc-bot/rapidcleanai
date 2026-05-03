@@ -12,8 +12,8 @@ export function Logo({ href = "/", priority = false }: LogoProps) {
       <Image
         src="/logo.png"
         alt="RapidCleanAI"
-        width={44}
-        height={44}
+        width={56}
+        height={56}
         priority={priority}
         className="shrink-0 rounded-full object-contain"
       />
