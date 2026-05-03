@@ -4,7 +4,6 @@ import Link from "next/link";
 import Image from "next/image";
 import {
   ArrowUpRight,
-  CheckCircle2,
   Clock3,
   DollarSign,
   MessageSquareText,
@@ -17,7 +16,6 @@ import { GlowButton } from "@/components/glow-button";
 import { useT } from "@/components/language-provider";
 import { PricingCard } from "@/components/pricing-card";
 import { SectionHeading } from "@/components/section-heading";
-import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { buttonVariants } from "@/components/ui/button";
 import { BILLING_ENTRY_HREF } from "@/lib/stripe";
@@ -25,11 +23,6 @@ import { cn } from "@/lib/utils";
 
 export default function HomePage() {
   const t = useT();
-  const localizedTrustBullets = [
-    t("home_trust_businesses"),
-    t("home_trust_fast"),
-    t("home_trust_margins"),
-  ];
   const homeProblems = [
     {
       title: t("home_problem_1_title"),
@@ -106,95 +99,92 @@ export default function HomePage() {
 
   return (
     <div className="pb-20">
-      <section className="container pt-10 sm:pt-16">
-        <div className="grid items-center gap-8 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)]">
-          <div className="space-y-7">
-            <Badge>{t("home_badge")}</Badge>
-            <div className="space-y-5">
-              <h1 className="font-display text-balance text-4xl font-semibold tracking-tight text-white sm:text-5xl lg:text-6xl">
-                {t("home_headline")}
-              </h1>
-              <p className="max-w-2xl text-lg leading-8 text-brand-muted sm:text-xl">
-                {t("home_subheadline")}
-              </p>
-            </div>
-            <div className="flex flex-col gap-3 sm:flex-row">
-              <GlowButton href={BILLING_ENTRY_HREF} className="justify-center sm:justify-start">
-                {t("home_primary_cta")}
-              </GlowButton>
-              <Link href="#example-quote" className={cn(buttonVariants({ variant: "secondary", size: "lg" }), "rounded-2xl")}>
-                {t("home_hero_secondary_cta")}
-              </Link>
-            </div>
-            <div className="grid gap-3 sm:grid-cols-3">
-              {localizedTrustBullets.map((bullet) => (
-                <div
-                  key={bullet}
-                  className="rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-brand-muted"
-                >
-                  <CheckCircle2 className="mb-2 size-4 text-brand-neon" />
-                  {bullet}
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="flex flex-col items-center gap-6 lg:items-end">
+      <section className="container relative overflow-hidden pt-10 text-center sm:pt-16">
+        <div className="pointer-events-none absolute left-1/2 top-12 h-[520px] w-[min(92vw,820px)] -translate-x-1/2 rounded-full bg-[radial-gradient(circle,rgba(34,255,136,0.18),rgba(31,207,255,0.13)_38%,transparent_70%)] blur-3xl" />
+        <div className="relative mx-auto flex max-w-5xl flex-col items-center">
+          <div className="relative flex justify-center">
+            <div className="absolute inset-4 rounded-full bg-[radial-gradient(circle,rgba(34,255,136,0.24),rgba(31,207,255,0.18)_42%,transparent_72%)] blur-2xl sm:inset-8" />
             <Image
               src="/logo.png"
               alt={t("home_hero_logo_alt")}
-              width={420}
-              height={420}
+              width={460}
+              height={460}
               priority
-              sizes="(min-width: 1280px) 420px, (min-width: 1024px) 390px, (min-width: 640px) 280px, 72vw"
-              className="h-auto w-[min(72vw,260px)] sm:w-[280px] lg:w-[390px] xl:w-[420px]"
+              sizes="(min-width: 1280px) 460px, (min-width: 1024px) 420px, (min-width: 640px) 300px, 78vw"
+              className="relative h-auto w-[min(78vw,280px)] sm:w-[300px] lg:w-[420px] xl:w-[460px] [filter:drop-shadow(0_0_34px_rgba(34,255,136,0.34))_drop-shadow(0_0_54px_rgba(31,207,255,0.22))]"
             />
+          </div>
 
-            <Card id="example-quote" className="surface-gradient premium-border relative w-full scroll-mt-24 overflow-hidden">
-              <CardContent className="space-y-5 p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-xs uppercase tracking-[0.18em] text-brand-muted">{t("home_snapshot_label")}</p>
-                    <h2 className="mt-2 font-display text-2xl text-white">{t("home_snapshot_title")}</h2>
-                  </div>
-                  <div className="rounded-2xl border border-brand-neon/20 bg-brand-neon/10 px-3 py-2 text-right">
-                    <p className="text-xs uppercase tracking-[0.18em] text-brand-muted">{t("home_snapshot_recommended")}</p>
-                    <p className="font-display text-3xl text-brand-neon">$295</p>
-                  </div>
-                </div>
+          <div className="mt-6 space-y-4 sm:mt-8">
+            <p className="font-display text-3xl font-semibold tracking-tight text-white sm:text-4xl">
+              {t("home_hero_brand_name")}
+            </p>
+            <p className="text-xs font-semibold uppercase tracking-[0.32em] text-brand-neon sm:text-sm">
+              {t("home_hero_tagline")}
+            </p>
+            <h1 className="mx-auto max-w-4xl font-display text-balance text-4xl font-semibold tracking-tight text-white sm:text-5xl lg:text-6xl">
+              {t("home_headline")}
+            </h1>
+            <p className="mx-auto max-w-2xl text-lg leading-8 text-brand-muted sm:text-xl">
+              {t("home_subheadline")}
+            </p>
+          </div>
 
-                <div className="grid gap-4 sm:grid-cols-3">
-                  <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                    <Clock3 className="size-5 text-brand-cyan" />
-                    <p className="mt-4 text-sm text-brand-muted">{t("home_snapshot_reply")}</p>
-                  </div>
-                  <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                    <DollarSign className="size-5 text-brand-neon" />
-                    <p className="mt-4 text-sm text-brand-muted">{t("home_snapshot_margin")}</p>
-                  </div>
-                  <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                    <MessageSquareText className="size-5 text-brand-cyan" />
-                    <p className="mt-4 text-sm text-brand-muted">{t("home_snapshot_message")}</p>
-                  </div>
-                </div>
-
-                <div className="rounded-3xl border border-white/10 bg-[rgba(11,15,20,0.66)] p-5">
-                  <div className="flex items-center justify-between gap-3">
-                    <p className="text-sm font-semibold text-white">{t("home_example_output")}</p>
-                    <span className="rounded-full border border-brand-cyan/20 bg-brand-cyan/10 px-3 py-1 text-xs uppercase tracking-[0.18em] text-brand-cyan">
-                      {t("home_guidance_label")}
-                    </span>
-                  </div>
-                  <div className="mt-4 space-y-3 text-sm text-brand-muted">
-                    <p>{t("home_example_range")}</p>
-                    <p>{t("home_example_margin")}</p>
-                    <p>{t("home_example_customer")}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+          <div className="mt-8 flex w-full flex-col justify-center gap-3 sm:w-auto sm:flex-row">
+            <GlowButton href={BILLING_ENTRY_HREF} className="justify-center">
+              {t("home_primary_cta")}
+            </GlowButton>
+            <Link href="/pricing" className={cn(buttonVariants({ variant: "secondary", size: "lg" }), "rounded-2xl")}>
+              {t("home_hero_secondary_cta")}
+            </Link>
           </div>
         </div>
+      </section>
+
+      <section className="container mt-16">
+        <Card id="example-quote" className="surface-gradient premium-border relative mx-auto max-w-5xl scroll-mt-24 overflow-hidden">
+          <CardContent className="space-y-5 p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs uppercase tracking-[0.18em] text-brand-muted">{t("home_snapshot_label")}</p>
+                <h2 className="mt-2 font-display text-2xl text-white">{t("home_snapshot_title")}</h2>
+              </div>
+              <div className="rounded-2xl border border-brand-neon/20 bg-brand-neon/10 px-3 py-2 text-right">
+                <p className="text-xs uppercase tracking-[0.18em] text-brand-muted">{t("home_snapshot_recommended")}</p>
+                <p className="font-display text-3xl text-brand-neon">$295</p>
+              </div>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-3">
+              <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                <Clock3 className="size-5 text-brand-cyan" />
+                <p className="mt-4 text-sm text-brand-muted">{t("home_snapshot_reply")}</p>
+              </div>
+              <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                <DollarSign className="size-5 text-brand-neon" />
+                <p className="mt-4 text-sm text-brand-muted">{t("home_snapshot_margin")}</p>
+              </div>
+              <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
+                <MessageSquareText className="size-5 text-brand-cyan" />
+                <p className="mt-4 text-sm text-brand-muted">{t("home_snapshot_message")}</p>
+              </div>
+            </div>
+
+            <div className="rounded-3xl border border-white/10 bg-[rgba(11,15,20,0.66)] p-5">
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-sm font-semibold text-white">{t("home_example_output")}</p>
+                <span className="rounded-full border border-brand-cyan/20 bg-brand-cyan/10 px-3 py-1 text-xs uppercase tracking-[0.18em] text-brand-cyan">
+                  {t("home_guidance_label")}
+                </span>
+              </div>
+              <div className="mt-4 space-y-3 text-sm text-brand-muted">
+                <p>{t("home_example_range")}</p>
+                <p>{t("home_example_margin")}</p>
+                <p>{t("home_example_customer")}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </section>
 
       <section className="container mt-24">

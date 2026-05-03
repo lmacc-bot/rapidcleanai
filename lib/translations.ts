@@ -25,7 +25,9 @@ export const translations = {
     home_subheadline:
       "RapidCleanAI helps you price jobs fast, protect your margins, and send professional quotes instantly.",
     home_primary_cta: "Start Free 14-Day Trial",
-    home_hero_secondary_cta: "See Example Quote",
+    home_hero_brand_name: "RapidCleanAI",
+    home_hero_tagline: "QUOTE FASTER",
+    home_hero_secondary_cta: "See Pricing",
     home_hero_logo_alt: "RapidCleanAI robot logo",
     home_secondary_cta: "View Pricing",
     home_trust_businesses: "Built for cleaning businesses",
@@ -472,7 +474,9 @@ export const translations = {
     home_subheadline:
       "RapidCleanAI te ayuda a cotizar trabajos rapido, proteger tus margenes y enviar cotizaciones profesionales al instante.",
     home_primary_cta: "Empezar prueba gratis de 14 dias",
-    home_hero_secondary_cta: "Ver cotizacion de ejemplo",
+    home_hero_brand_name: "RapidCleanAI",
+    home_hero_tagline: "COTIZA MAS RAPIDO",
+    home_hero_secondary_cta: "Ver precios",
     home_hero_logo_alt: "Logo del robot de RapidCleanAI",
     home_secondary_cta: "Ver precios",
     home_trust_businesses: "Creado para negocios de limpieza",
